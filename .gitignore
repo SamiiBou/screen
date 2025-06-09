@@ -1,0 +1,18 @@
+# dependencies
+node_modules/
+
+# production
+.next/
+out/
+
+# misc
+.DS_Store
+.env
+*.log
+
+# IDEs
+.vscode/
+.idea/
+
+# build
+*.tsbuildinfo
