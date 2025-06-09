@@ -407,8 +407,8 @@ export default function ButtonGame({ challengeId }: ButtonGameProps) {
           e.preventDefault()
           onRelease()
         }}
-        initial={{ scale: 0, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
+        initial={{ scale: 0, opacity: 0, translateX: '-50%', translateY: '-50%' }}
+        animate={{ scale: pressed ? 0.92 : 1, opacity: 1, translateX: '-50%', translateY: '-50%' }}
         transition={{ 
           type: "spring", 
           stiffness: 300, 
@@ -420,7 +420,6 @@ export default function ButtonGame({ challengeId }: ButtonGameProps) {
           position: 'absolute',
           left: `${pos.x}%`,
           top: `${pos.y}%`,
-          transform: 'translate(-50%, -50%)',
           width: '120px',
           height: '120px',
           minWidth: '120px',
@@ -436,10 +435,9 @@ export default function ButtonGame({ challengeId }: ButtonGameProps) {
           fontWeight: 'bold',
           cursor: phase === 'over' ? 'not-allowed' : 'pointer',
           opacity: phase === 'over' ? 0.6 : 1,
-          boxShadow: pressed 
-            ? '0 8px 20px rgba(0,0,0,0.25)' 
+          boxShadow: pressed
+            ? '0 8px 20px rgba(0,0,0,0.25)'
             : '0 12px 30px rgba(0,0,0,0.35)',
-          transform: `translate(-50%, -50%) scale(${pressed ? 0.92 : 1})`,
           transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
           touchAction: 'none',
           userSelect: 'none',
