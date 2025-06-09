@@ -154,6 +154,7 @@ export default function ButtonGame({ challengeId }: ButtonGameProps) {
     setMoveEffect(true)
     setTimeout(() => setMoveEffect(false), 700)
 
+
     setPressed(false)
 
     // démarrer le décompte lorsque la transition est terminée
@@ -469,6 +470,7 @@ export default function ButtonGame({ challengeId }: ButtonGameProps) {
             ? '0 8px 20px rgba(0,0,0,0.25)'
             : '0 12px 30px rgba(0,0,0,0.35)',
           transition: 'left 0.7s cubic-bezier(0.4, 0, 0.2, 1), top 0.7s cubic-bezier(0.4, 0, 0.2, 1), transform 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+
           touchAction: 'none',
           userSelect: 'none',
           WebkitUserSelect: 'none',
