@@ -149,25 +149,31 @@ export default function ButtonGame({ challengeId }: ButtonGameProps) {
   const scheduleMove = () => {
     if (phase !== 'game') return
 
+    // déplacer le bouton
     newPosition()
     setMoveEffect(true)
     setTimeout(() => setMoveEffect(false), 700)
-    setWaiting(true)
-    setShowTimer(true)
-    setTimer(3)
+
+
     setPressed(false)
-    
-    // Décompte
-    let count = 3
-    waitTimer.current = setInterval(() => {
-      count--
-      setTimer(count)
-      
-      if (count <= 0) {
-        finish('timeout')
-      }
-    }, 1000)
-    
+
+    // démarrer le décompte lorsque la transition est terminée
+    setTimeout(() => {
+      setWaiting(true)
+      setShowTimer(true)
+      setTimer(3)
+
+      let count = 3
+      waitTimer.current = setInterval(() => {
+        count--
+        setTimer(count)
+
+        if (count <= 0) {
+          finish('timeout')
+        }
+      }, 1000)
+    }, 700)
+
     // Prochain mouvement
     const delay = 8000 + Math.random() * 4000
     moveTimer.current = setTimeout(scheduleMove, delay)
@@ -463,7 +469,8 @@ export default function ButtonGame({ challengeId }: ButtonGameProps) {
           boxShadow: pressed
             ? '0 8px 20px rgba(0,0,0,0.25)'
             : '0 12px 30px rgba(0,0,0,0.35)',
-          transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+          transition: 'left 0.7s cubic-bezier(0.4, 0, 0.2, 1), top 0.7s cubic-bezier(0.4, 0, 0.2, 1), transform 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+
           touchAction: 'none',
           userSelect: 'none',
           WebkitUserSelect: 'none',
