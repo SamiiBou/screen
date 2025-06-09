@@ -24,6 +24,7 @@ export default function ButtonGame({ challengeId }: ButtonGameProps) {
   const [waiting, setWaiting] = useState(false)
   const [timer, setTimer] = useState(3)
   const [showTimer, setShowTimer] = useState(false)
+  const [moveEffect, setMoveEffect] = useState(false)
   
   // Refs
   const mainTimer = useRef<NodeJS.Timeout | null>(null)
@@ -147,24 +148,31 @@ export default function ButtonGame({ challengeId }: ButtonGameProps) {
 
   const scheduleMove = () => {
     if (phase !== 'game') return
-    
+
+    // déplacer le bouton
     newPosition()
-    setWaiting(true)
-    setShowTimer(true)
-    setTimer(3)
+    setMoveEffect(true)
+    setTimeout(() => setMoveEffect(false), 700)
+
     setPressed(false)
-    
-    // Décompte
-    let count = 3
-    waitTimer.current = setInterval(() => {
-      count--
-      setTimer(count)
-      
-      if (count <= 0) {
-        finish('timeout')
-      }
-    }, 1000)
-    
+
+    // démarrer le décompte lorsque la transition est terminée
+    setTimeout(() => {
+      setWaiting(true)
+      setShowTimer(true)
+      setTimer(3)
+
+      let count = 3
+      waitTimer.current = setInterval(() => {
+        count--
+        setTimer(count)
+
+        if (count <= 0) {
+          finish('timeout')
+        }
+      }, 1000)
+    }, 700)
+
     // Prochain mouvement
     const delay = 8000 + Math.random() * 4000
     moveTimer.current = setTimeout(scheduleMove, delay)
@@ -384,6 +392,28 @@ export default function ButtonGame({ challengeId }: ButtonGameProps) {
       </AnimatePresence>
 
       {/* LE BOUTON */}
+      <AnimatePresence>
+        {moveEffect && (
+          <motion.div
+            initial={{ scale: 0, opacity: 0.5 }}
+            animate={{ scale: 2, opacity: 0 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.7 }}
+            style={{
+              position: 'absolute',
+              left: `${pos.x}%`,
+              top: `${pos.y}%`,
+              width: '160px',
+              height: '160px',
+              borderRadius: '80px',
+              backgroundColor: '#60a5fa',
+              translateX: '-50%',
+              translateY: '-50%',
+              zIndex: 75,
+            }}
+          />
+        )}
+      </AnimatePresence>
       <motion.button
         onTouchStart={e => {
           e.preventDefault()
@@ -407,8 +437,8 @@ export default function ButtonGame({ challengeId }: ButtonGameProps) {
           e.preventDefault()
           onRelease()
         }}
-        initial={{ scale: 0, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
+        initial={{ scale: 0, opacity: 0, translateX: '-50%', translateY: '-50%' }}
+        animate={{ scale: pressed ? 0.92 : 1, opacity: 1, translateX: '-50%', translateY: '-50%' }}
         transition={{ 
           type: "spring", 
           stiffness: 300, 
@@ -420,7 +450,6 @@ export default function ButtonGame({ challengeId }: ButtonGameProps) {
           position: 'absolute',
           left: `${pos.x}%`,
           top: `${pos.y}%`,
-          transform: 'translate(-50%, -50%)',
           width: '120px',
           height: '120px',
           minWidth: '120px',
@@ -436,11 +465,10 @@ export default function ButtonGame({ challengeId }: ButtonGameProps) {
           fontWeight: 'bold',
           cursor: phase === 'over' ? 'not-allowed' : 'pointer',
           opacity: phase === 'over' ? 0.6 : 1,
-          boxShadow: pressed 
-            ? '0 8px 20px rgba(0,0,0,0.25)' 
+          boxShadow: pressed
+            ? '0 8px 20px rgba(0,0,0,0.25)'
             : '0 12px 30px rgba(0,0,0,0.35)',
-          transform: `translate(-50%, -50%) scale(${pressed ? 0.92 : 1})`,
-          transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+          transition: 'left 0.7s cubic-bezier(0.4, 0, 0.2, 1), top 0.7s cubic-bezier(0.4, 0, 0.2, 1), transform 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
           touchAction: 'none',
           userSelect: 'none',
           WebkitUserSelect: 'none',
@@ -468,9 +496,9 @@ export default function ButtonGame({ challengeId }: ButtonGameProps) {
             exit={{ opacity: 0, y: -30 }}
             style={{
               position: 'absolute',
-              bottom: '100px',
-              left: '50%',
-              transform: 'translateX(-50%)',
+              top: `calc(${pos.y}% + 80px)`,
+              left: `${pos.x}%`,
+              transform: 'translate(-50%, 0)',
               zIndex: 70,
               textAlign: 'center'
             }}
