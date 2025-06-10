@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { motion } from 'motion/react'
 import { apiService, LeaderboardEntry } from '@/utils/api'
 import { useAuth } from '@/contexts/AuthContext'
+import { useChallenges } from '@/contexts/ChallengesContext'
 import AuthGate from '@/components/AuthGate'
 import { AceternityButton } from '@/components/ui/AceternityButton'
 import { MiniKit, tokenToDecimals, Tokens, PayCommandInput } from '@worldcoin/minikit-js'
@@ -212,8 +213,10 @@ function ChallengePage() {
   const params = useParams()
   const router = useRouter()
   const { user } = useAuth()
-  const [challenge, setChallenge] = useState<Challenge | null>(null)
-  const [loading, setLoading] = useState(true)
+  const { challenges } = useChallenges()
+  const initialChallenge = challenges[params.id as string] || null
+  const [challenge, setChallenge] = useState<Challenge | null>(initialChallenge)
+  const [loading, setLoading] = useState(!initialChallenge)
   const [participationStatus, setParticipationStatus] = useState<ParticipationStatus | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [isNavigating, setIsNavigating] = useState(false)
@@ -239,7 +242,7 @@ function ChallengePage() {
 
   const loadChallengeData = async () => {
     try {
-      setLoading(true)
+      if (!challenge) setLoading(true)
       setError(null)
       
       console.log('🔍 [CHALLENGE DEBUG] Loading challenge with ID:', challengeId)
