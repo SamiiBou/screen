@@ -774,14 +774,11 @@ router.post('/:challengeId/participate', auth, async (req: AuthRequest, res) => 
 
     // Pour les challenges payants, vérifier qu'il y a une participation payée
     if (challenge.participationPrice > 0) {
-      // Chercher une participation complétée ou en attente avec transaction_id (paiement effectué)
+      // Chercher SEULEMENT une participation avec paiement complété
       const paidParticipation = await Participation.findOne({
         userId,
         challengeId,
-        $or: [
-          { paymentStatus: 'completed' },
-          { paymentStatus: 'pending', transactionId: { $ne: 'pending' } }
-        ]
+        paymentStatus: 'completed'
       })
 
       if (!paidParticipation) {
@@ -801,12 +798,6 @@ router.post('/:challengeId/participate', auth, async (req: AuthRequest, res) => 
       paidParticipation.timeHeld = timeHeld
       paidParticipation.challengesCompleted = challengesCompleted || 0
       paidParticipation.eliminationReason = eliminationReason
-      
-      // Si le paiement était en attente et que l'utilisateur participe, on peut marquer comme complété
-      if (paidParticipation.paymentStatus === 'pending') {
-        paidParticipation.paymentStatus = 'completed'
-        console.log(`✅ [PARTICIPATION] Marking payment as completed for user ${userId} in challenge ${challengeId}`)
-      }
       
       await paidParticipation.save()
 
@@ -894,20 +885,16 @@ router.get('/:challengeId/can-participate', auth, async (req: AuthRequest, res) 
       const paidParticipation = await Participation.findOne({
         userId,
         challengeId,
-        $or: [
-          { paymentStatus: 'completed' },
-          { paymentStatus: 'pending', transactionId: { $ne: 'pending' } }
-        ]
+        paymentStatus: 'completed'
       })
-      console.log('✅ [CAN-PARTICIPATE DEBUG] Paid/verified participation found:', paidParticipation)
+      console.log('✅ [CAN-PARTICIPATE DEBUG] Completed participation found:', paidParticipation)
 
       const pendingParticipation = await Participation.findOne({
         userId,
         challengeId,
-        paymentStatus: 'pending',
-        transactionId: 'pending'
+        paymentStatus: 'pending'
       })
-      console.log('⏳ [CAN-PARTICIPATE DEBUG] Pending (unverified) participation found:', pendingParticipation)
+      console.log('⏳ [CAN-PARTICIPATE DEBUG] Pending participation found:', pendingParticipation)
 
       const response = { 
         canParticipate: !!paidParticipation && paidParticipation.timeHeld === 0,
@@ -915,7 +902,7 @@ router.get('/:challengeId/can-participate', auth, async (req: AuthRequest, res) 
         hasPendingPayment: !!pendingParticipation,
         hasPaid: !!paidParticipation,
         participationPrice: challenge.participationPrice,
-        paymentStatus: paidParticipation?.paymentStatus || 'none'
+        paymentStatus: paidParticipation?.paymentStatus || (pendingParticipation?.paymentStatus || 'none')
       }
 
       console.log('📊 [CAN-PARTICIPATE DEBUG] Response for PAID challenge:', response)
