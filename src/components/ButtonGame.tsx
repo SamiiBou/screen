@@ -20,6 +20,7 @@ export default function ButtonGame({ challengeId }: ButtonGameProps) {
   const [milliseconds, setMilliseconds] = useState(0)
   const [challenge, setChallenge] = useState<any>(null)
   const [hasPlayed, setHasPlayed] = useState(false)
+  const [canPlay, setCanPlay] = useState(true)
   
   // Position du bouton
   const [pos, setPos] = useState({ x: 50, y: 50 })
@@ -101,14 +102,31 @@ export default function ButtonGame({ challengeId }: ButtonGameProps) {
     }
   }, [])
 
-  // Charger challenge
+  // Charger challenge et vérifier si l'utilisateur peut jouer
   useEffect(() => {
     if (challengeId) {
+      // Charger le challenge
       apiService.getChallengeById(challengeId)
         .then(res => setChallenge(res?.challenge))
         .catch(console.error)
+      
+      // Vérifier si l'utilisateur peut participer
+      if (user) {
+        apiService.canParticipateInChallenge(challengeId)
+          .then(status => {
+            console.log('🔍 [PARTICIPATION CHECK] Statut:', status)
+            setCanPlay(status.canParticipate)
+            if (!status.canParticipate) {
+              console.log('⚠️ [PARTICIPATION CHECK] Utilisateur ne peut pas jouer')
+            }
+          })
+          .catch(error => {
+            console.error('❌ [PARTICIPATION CHECK] Erreur:', error)
+            setCanPlay(false)
+          })
+      }
     }
-  }, [challengeId])
+  }, [challengeId, user])
 
   // Chrono de jeu avec millisecondes
   useEffect(() => {
@@ -210,9 +228,15 @@ export default function ButtonGame({ challengeId }: ButtonGameProps) {
   }
 
   const begin = () => {
+    if (!canPlay) {
+      console.log('❌ [GAME START] Tentative de démarrage bloquée - utilisateur déjà participé')
+      return
+    }
+    
     console.log('🎮 Début du jeu')
     setPhase('game')
     setHasPlayed(true)
+    setCanPlay(false) // Empêcher d'autres tentatives
     setPoints(0)
     setSeconds(0)
     setMilliseconds(0)
@@ -273,9 +297,13 @@ export default function ButtonGame({ challengeId }: ButtonGameProps) {
   }
 
   const onPress = () => {
-    console.log('👆 onPress appelé, phase:', phase, 'waiting:', waiting, 'showTimer:', showTimer)
+    console.log('👆 onPress appelé, phase:', phase, 'waiting:', waiting, 'showTimer:', showTimer, 'canPlay:', canPlay)
     
     if (phase === 'start') {
+      if (!canPlay) {
+        console.log('❌ [PRESS] Tentative de jeu bloquée')
+        return
+      }
       begin()
       return
     }
@@ -375,26 +403,36 @@ export default function ButtonGame({ challengeId }: ButtonGameProps) {
           padding: '0 16px'
         }}
       >
-        {/* Bouton retour */}
-        <button 
-          onClick={() => router.push('/')}
-          style={{
-            background: 'none',
-            border: 'none',
-            fontSize: '20px',
-            color: '#666',
-            cursor: 'pointer',
-            padding: '6px',
-            borderRadius: '50%',
-            width: '32px',
-            height: '32px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
-          }}
-        >
-          ←
-        </button>
+        {/* Bouton retour - Seulement visible avant le début du jeu */}
+        {phase === 'start' && (
+          <button 
+            onClick={() => {
+              console.log('🏠 [EXIT] Navigation vers l\'accueil depuis l\'écran de démarrage')
+              router.push('/')
+            }}
+            style={{
+              background: 'none',
+              border: 'none',
+              fontSize: '20px',
+              color: '#666',
+              cursor: 'pointer',
+              padding: '6px',
+              borderRadius: '50%',
+              width: '32px',
+              height: '32px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}
+          >
+            ←
+          </button>
+        )}
+        
+        {/* Espaceur quand pas de bouton retour */}
+        {phase !== 'start' && (
+          <div style={{ width: '32px', height: '32px' }} />
+        )}
 
         {/* Message central ou score */}
         <AnimatePresence mode="wait">
@@ -495,7 +533,7 @@ export default function ButtonGame({ challengeId }: ButtonGameProps) {
           damping: 25,
           duration: 0.6
         }}
-        disabled={phase === 'over'}
+        disabled={phase === 'over' || !canPlay}
         style={{
           position: 'absolute',
           left: `${pos.x}%`,
@@ -513,8 +551,8 @@ export default function ButtonGame({ challengeId }: ButtonGameProps) {
           color: '#ffffff',
           fontSize: '16px',
           fontWeight: 'bold',
-          cursor: phase === 'over' ? 'not-allowed' : 'pointer',
-          opacity: phase === 'over' ? 0.6 : 1,
+          cursor: (phase === 'over' || !canPlay) ? 'not-allowed' : 'pointer',
+          opacity: (phase === 'over' || !canPlay) ? 0.6 : 1,
           boxShadow: pressed
             ? '0 8px 20px rgba(0,0,0,0.25)'
             : '0 12px 30px rgba(0,0,0,0.35)',
@@ -533,7 +571,8 @@ export default function ButtonGame({ challengeId }: ButtonGameProps) {
           lineHeight: '1'
         }}
       >
-        {phase === 'over' ? 'FIN' : 
+        {!canPlay && phase === 'start' ? 'DÉJÀ JOUÉ' :
+         phase === 'over' ? 'FIN' : 
          phase === 'start' ? 'START' :
          waiting ? 'APPUIE!' : 'TIENS'}
       </motion.button>
@@ -557,11 +596,11 @@ export default function ButtonGame({ challengeId }: ButtonGameProps) {
             <p style={{
               fontSize: '16px',
               fontWeight: '500',
-              color: '#666666',
+              color: canPlay ? '#666666' : '#ff6666',
               margin: 0,
               textAlign: 'center'
             }}>
-              Appuie pour commencer
+              {canPlay ? 'Appuie pour commencer' : 'Tu as déjà participé à ce challenge'}
             </p>
           </motion.div>
         )}
@@ -652,6 +691,7 @@ export default function ButtonGame({ challengeId }: ButtonGameProps) {
           </motion.div>
         )}
       </AnimatePresence>
+
     </div>
   )
 }

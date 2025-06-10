@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { motion } from 'motion/react'
 import { apiService, LeaderboardEntry } from '@/utils/api'
@@ -213,30 +213,79 @@ function ChallengePage() {
   const params = useParams()
   const router = useRouter()
   const { user } = useAuth()
-  const { challenges, updateChallenge, getChallenge } = useChallenges()
-  const initialChallenge = getChallenge(params.id as string)
-  const [challenge, setChallenge] = useState<Challenge | null>(initialChallenge)
-  const [loading, setLoading] = useState(!initialChallenge)
+  const { challenges, updateChallenge, getChallenge, getChallengeImmediate, getChallengeWithFallback, preloadChallenge } = useChallenges()
+  
+  // MÉTHODE RADICALE: chargement immédiat avec données partielles
+  const challengeId = params.id as string
+  const immediateChallenge = getChallengeImmediate(challengeId)
+  
+  const [challenge, setChallenge] = useState<Challenge | null>(
+    immediateChallenge && !('isPartial' in immediateChallenge) ? immediateChallenge : null
+  )
+  const [partialChallenge, setPartialChallenge] = useState<any>(
+    immediateChallenge && 'isPartial' in immediateChallenge ? immediateChallenge : null
+  )
+  const [loading, setLoading] = useState(false)
   const [participationStatus, setParticipationStatus] = useState<ParticipationStatus | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [isNavigating, setIsNavigating] = useState(false)
+  const [isJoining, setIsJoining] = useState(false)
+  const joiningRef = useRef(false)
+  const buttonRef = useRef<HTMLButtonElement>(null)
   const [paymentLoading, setPaymentLoading] = useState(false)
   const [notification, setNotification] = useState<{ show: boolean, message: string, type: 'success' | 'error' | 'info' }>({ show: false, message: '', type: 'info' })
+  const [showingPartial, setShowingPartial] = useState(!!partialChallenge)
+  const loadingRef = useRef(false)
 
-  const challengeId = params.id as string
+  // AFFICHAGE RADICAL: Toujours montrer quelque chose, jamais d'écran de chargement vide
+  const displayChallenge = challenge || partialChallenge
 
   useEffect(() => {
-    if (challengeId) {
-      // Si on a déjà les données du challenge en cache, charger seulement le statut de participation
-      if (initialChallenge) {
-        console.log('🚀 [CHALLENGE DEBUG] Using cached challenge data for instant navigation')
-        setLoading(false)
+    if (challengeId && !loadingRef.current) {
+      loadingRef.current = true
+      console.log('🚀 [RADICAL] Starting ultra-fast challenge load for:', challengeId)
+      
+      // STRATÉGIE RADICALE: Chargement parallèle et immédiat
+      Promise.all([
+        loadChallengeDataRadical(),
         loadParticipationStatus()
-      } else {
-        loadChallengeData()
-      }
+      ]).finally(() => {
+        loadingRef.current = false
+      })
     }
   }, [challengeId])
+  
+  // HYPER RADICAL: Injection CSS globale pour éliminer TOUT comportement de sélection
+  useEffect(() => {
+    console.log('💥 [HYPER RADICAL] Injecting global CSS to eliminate ALL selection behaviors!')
+    const style = document.createElement('style')
+    style.id = 'hyper-radical-no-select'
+    style.textContent = `
+      * {
+        -webkit-tap-highlight-color: transparent !important;
+        -webkit-touch-callout: none !important;
+        -webkit-user-select: none !important;
+        -moz-user-select: none !important;
+        -ms-user-select: none !important;
+        user-select: none !important;
+        outline: none !important;
+      }
+      body {
+        touch-action: manipulation !important;
+      }
+      div, button, span {
+        -webkit-tap-highlight-color: transparent !important;
+      }
+    `
+    document.head.appendChild(style)
+    
+    return () => {
+      const existingStyle = document.getElementById('hyper-radical-no-select')
+      if (existingStyle) {
+        document.head.removeChild(existingStyle)
+      }
+    }
+  }, [])
 
   useEffect(() => {
     if (notification.show) {
@@ -247,32 +296,49 @@ function ChallengePage() {
     }
   }, [notification.show])
 
-  const loadChallengeData = async () => {
+  // MÉTHODE RADICALE: Chargement ultra-optimisé avec fallback intelligent
+  const loadChallengeDataRadical = async () => {
     try {
-      setLoading(true)
-      setError(null)
+      console.log('⚡ [RADICAL] Ultra-fast challenge loading for:', challengeId)
       
-      console.log('🔍 [CHALLENGE DEBUG] Loading challenge with ID:', challengeId)
+      // Si on a déjà le challenge complet, ne rien charger
+      if (challenge) {
+        console.log('✅ [RADICAL] Challenge already loaded, skipping API call')
+        setShowingPartial(false)
+        return
+      }
       
-      // Charger les détails du challenge via l'API service
-      const challengeResponse = await apiService.getChallengeById(challengeId)
+      // Utiliser le cache intelligent avec stale-while-revalidate
+      const cachedChallenge = await getChallengeWithFallback(challengeId)
       
-      console.log('📋 [CHALLENGE DEBUG] Challenge response:', challengeResponse)
-      
-      if (challengeResponse && challengeResponse.challenge) {
-        setChallenge(challengeResponse.challenge)
-        // Mettre à jour le cache
-        updateChallenge(challengeResponse.challenge)
-        console.log('💰 [CHALLENGE DEBUG] Challenge participation price:', challengeResponse.challenge.participationPrice)
-        
-        // Charger le statut de participation
-        await loadParticipationStatus()
+      if (cachedChallenge) {
+        console.log('✅ [RADICAL] Challenge loaded successfully:', cachedChallenge.title)
+        setChallenge(cachedChallenge)
+        setPartialChallenge(null)
+        setShowingPartial(false)
+        updateChallenge(cachedChallenge)
       } else {
-        setError('Challenge not found')
+        // Fallback: essayer un appel API direct
+        console.log('⚠️ [RADICAL] Cache miss, trying direct API call')
+        setLoading(true)
+        const challengeResponse = await apiService.getChallengeById(challengeId)
+        
+        if (challengeResponse?.challenge) {
+          setChallenge(challengeResponse.challenge)
+          setPartialChallenge(null)
+          setShowingPartial(false)
+          updateChallenge(challengeResponse.challenge)
+          console.log('✅ [RADICAL] Direct API call successful')
+        } else {
+          setError('Challenge not found')
+        }
       }
     } catch (error: any) {
-      console.error('❌ [CHALLENGE DEBUG] Error loading challenge:', error)
-      setError(`Failed to load challenge: ${error.message || 'Unknown error'}`)
+      console.error('❌ [RADICAL] Error in radical loading:', error)
+      // Ne pas écraser l'affichage partiel en cas d'erreur
+      if (!partialChallenge && !challenge) {
+        setError(`Failed to load challenge: ${error.message || 'Unknown error'}`)
+      }
     } finally {
       setLoading(false)
     }
@@ -297,7 +363,8 @@ function ChallengePage() {
   }
 
   const handlePayForChallenge = async () => {
-    if (!challenge || !user || paymentLoading) return
+    const currentChallenge = challenge || displayChallenge
+    if (!currentChallenge || !user || paymentLoading || showingPartial) return
     
     console.log('💰 [CHALLENGE PAYMENT] Starting payment for challenge:', challengeId)
     setPaymentLoading(true)
@@ -329,7 +396,7 @@ function ChallengePage() {
             token_amount: tokenToDecimals(participationPrice, Tokens.WLD).toString(),
           }
         ],
-        description: `Join challenge: ${challenge.title}`,
+        description: `Join challenge: ${currentChallenge.title}`,
         network: 'worldchain' // Ajout explicite du réseau
       }
 
@@ -390,49 +457,73 @@ function ChallengePage() {
     }
   }
 
-  const handleParticipate = async () => {
-    if (!challenge || !user || isNavigating) return
+  // MÉTHODE HYPER RADICALE FIXE: Action immédiate sans erreur
+  const handleParticipate = useCallback(() => {
+    console.log('💥 [HYPER RADICAL FIX] IMMEDIATE ACTION!')
     
-    console.log('🏡 [CHALLENGE DEBUG] ===== STARTING CHALLENGE PARTICIPATION =====')
-    console.log('🏡 [CHALLENGE DEBUG] Challenge ID:', challengeId)
-    console.log('🏡 [CHALLENGE DEBUG] Challenge participation price:', challenge.participationPrice)
-    console.log('🏡 [CHALLENGE DEBUG] Current participation status:', participationStatus)
-    
-    // Vérifier si le challenge nécessite un paiement
-    if (challenge.participationPrice > 0) {
-      console.log('💰 [CHALLENGE DEBUG] This is a PAID challenge (price: ' + challenge.participationPrice + ' WLD)')
-      
-      if (!participationStatus) {
-        console.error('❌ [CHALLENGE DEBUG] No participation status available!')
-        setNotification({ show: true, message: "Error: Cannot determine participation status", type: "error" })
-        return
-      }
-      
-      if (participationStatus.needsPayment) {
-        console.error('❌ [CHALLENGE DEBUG] Payment required but user clicked participate instead of pay!')
-        setNotification({ show: true, message: "You need to pay first!", type: "error" })
-        return
-      }
-      
-      if (!participationStatus.hasPaid) {
-        console.error('❌ [CHALLENGE DEBUG] User has not paid for this challenge!')
-        setNotification({ show: true, message: "Payment required to join this challenge", type: "error" })
-        return
-      }
-      
-      console.log('✅ [CHALLENGE DEBUG] Payment verified, proceeding to game...')
-    } else {
-      console.log('🆓 [CHALLENGE DEBUG] This is a FREE challenge')
+    // Vérification rapide
+    if (joiningRef.current) {
+      console.log('🚫 [HYPER RADICAL FIX] Already processing')
+      return
     }
     
-    console.log('🏡 [CHALLENGE DEBUG] All checks passed, starting challenge...')
+    const currentChallenge = challenge || displayChallenge
+    if (!currentChallenge || !user || showingPartial) {
+      console.log('❌ [HYPER RADICAL FIX] Validation failed')
+      return
+    }
+    
+    // Verrouillage immédiat
+    joiningRef.current = true
+    console.log('🔒 [HYPER RADICAL FIX] LOCKED!')
+    
+    // Transformation du bouton (compatible avec div)
+    if (buttonRef.current) {
+      const btn = buttonRef.current
+      btn.style.backgroundColor = '#d1d5db'
+      btn.style.color = '#9ca3af'
+      btn.style.cursor = 'not-allowed'
+      btn.style.pointerEvents = 'none'
+      btn.innerHTML = 'Joining...'
+      console.log('⚡ [HYPER RADICAL FIX] Button transformed!')
+    }
+    
+    setIsJoining(true)
+    
+    // Vérification paiement rapide
+    if (currentChallenge.participationPrice > 0) {
+      if (!participationStatus?.hasPaid) {
+        console.log('💰 [HYPER RADICAL FIX] Payment required')
+        setNotification({ show: true, message: "Payment required!", type: "error" })
+        
+        // Reset rapide
+        joiningRef.current = false
+        if (buttonRef.current) {
+          const btn = buttonRef.current
+          btn.style.backgroundColor = '#000000'
+          btn.style.color = '#ffffff'
+          btn.style.cursor = 'pointer'
+          btn.style.pointerEvents = 'auto'
+          btn.innerHTML = 'Join Challenge'
+        }
+        setIsJoining(false)
+        return
+      }
+    }
+    
+    // Navigation instantanée
+    console.log('🚀 [HYPER RADICAL FIX] NAVIGATING NOW!')
     setIsNavigating(true)
     
-    // Petite pause pour éviter les double-clics
-    setTimeout(() => {
-      router.push(`/game?challengeId=${challengeId}`)
-    }, 100)
-  }
+    if (buttonRef.current) {
+      buttonRef.current.innerHTML = 'Starting Game...'
+    }
+    
+    // Navigation directe
+    router.push(`/game?challengeId=${challengeId}`)
+    console.log('✅ [HYPER RADICAL FIX] Navigation triggered!')
+    
+  }, [challenge, displayChallenge, user, showingPartial, challengeId, participationStatus, router])
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -461,7 +552,7 @@ function ChallengePage() {
     return `${minutes}m`
   }
 
-  if (loading) {
+  if (loading && !displayChallenge) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
         <motion.div
@@ -473,7 +564,7 @@ function ChallengePage() {
     )
   }
 
-  if (error || !challenge) {
+  if (error && !displayChallenge) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center max-w-md mx-auto p-8">
@@ -490,7 +581,16 @@ function ChallengePage() {
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div 
+      className="min-h-screen bg-white"
+      style={{
+        userSelect: 'none',
+        WebkitUserSelect: 'none',
+        WebkitTouchCallout: 'none',
+        WebkitTapHighlightColor: 'transparent',
+        touchAction: 'manipulation'
+      }}
+    >
       
       {/* Header */}
       <motion.nav 
@@ -519,8 +619,20 @@ function ChallengePage() {
       </motion.nav>
 
       {/* Content */}
-      <div className="pt-24 pb-12 px-6">
-        <div className="max-w-4xl mx-auto">
+      <div 
+        className="pt-24 pb-12 px-6"
+        style={{
+          userSelect: 'none',
+          WebkitUserSelect: 'none'
+        }}
+      >
+        <div 
+          className="max-w-4xl mx-auto"
+          style={{
+            userSelect: 'none',
+            WebkitUserSelect: 'none'
+          }}
+        >
           
           <motion.div
             initial={{ opacity: 0, y: 40 }}
@@ -528,7 +640,16 @@ function ChallengePage() {
             className="text-center mb-12"
           >
             <h1 className="text-5xl md:text-7xl font-light text-black mb-8 tracking-tight">
-              {challenge.title}
+              {displayChallenge?.title}
+              {showingPartial && (
+                <motion.span 
+                  className="text-sm text-gray-400 block mt-2"
+                  animate={{ opacity: [0.5, 1, 0.5] }}
+                  transition={{ duration: 1.5, repeat: Infinity }}
+                >
+                  Loading details...
+                </motion.span>
+              )}
             </h1>
           </motion.div>
 
@@ -539,16 +660,23 @@ function ChallengePage() {
             className="grid grid-cols-3 gap-8 mb-16 max-w-lg mx-auto"
           >
             <div className="text-center">
-              <div className="text-2xl font-light text-black mb-1">{challenge.firstPrize} WLD</div>
+              <div className="text-2xl font-light text-black mb-1">
+                {showingPartial ? '???' : displayChallenge?.firstPrize || '0'} WLD
+              </div>
               <div className="text-gray-400 text-xs font-medium">1ST PRIZE</div>
-              <div className="text-sm text-gray-600 mt-1">2nd: {challenge.secondPrize} • 3rd: {challenge.thirdPrize}</div>
+              <div className="text-sm text-gray-600 mt-1">
+                {showingPartial ? 'Loading...' : `2nd: ${displayChallenge?.secondPrize || 0} • 3rd: ${displayChallenge?.thirdPrize || 0}`}
+              </div>
             </div>
             <div className="text-center">
-              <div className="text-3xl font-light text-black mb-1">{challenge.currentParticipants}<span className="text-gray-300">/{challenge.maxParticipants}</span></div>
+              <div className="text-3xl font-light text-black mb-1">
+                {showingPartial ? '???' : displayChallenge?.currentParticipants || '0'}
+                <span className="text-gray-300">/{showingPartial ? '???' : displayChallenge?.maxParticipants || '0'}</span>
+              </div>
               <div className="text-gray-400 text-sm font-medium">PLAYERS</div>
             </div>
             <div className="text-center">
-              <div className="text-3xl font-light text-black mb-1">{challenge.participationPrice} WLD</div>
+              <div className="text-3xl font-light text-black mb-1">{displayChallenge?.participationPrice || 0} WLD</div>
               <div className="text-gray-400 text-sm font-medium">ENTRY FEE</div>
             </div>
           </motion.div>
@@ -558,6 +686,12 @@ function ChallengePage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
             className="text-center"
+            style={{
+              userSelect: 'none',
+              WebkitUserSelect: 'none',
+              WebkitTouchCallout: 'none',
+              WebkitTapHighlightColor: 'transparent'
+            }}
           >
             {/* Notification */}
             {notification.show && (
@@ -574,25 +708,34 @@ function ChallengePage() {
               </motion.div>
             )}
 
-            {challenge.status === 'active' && participationStatus && (
-              <div className="space-y-6">
+            {displayChallenge?.status === 'active' && participationStatus && (
+              <div 
+                className="space-y-6"
+                style={{
+                  userSelect: 'none',
+                  WebkitUserSelect: 'none',
+                  WebkitTouchCallout: 'none',
+                  WebkitTapHighlightColor: 'transparent'
+                }}
+              >
                 {/* Debug: Show what should be displayed */}
                 {console.log('🖥️ [UI DEBUG] Rendering UI with conditions:', {
-                  challengeStatus: challenge.status,
-                  participationPrice: challenge.participationPrice,
+                  challengeStatus: displayChallenge?.status,
+                  participationPrice: displayChallenge?.participationPrice,
                   needsPayment: participationStatus.needsPayment,
                   hasPendingPayment: participationStatus.hasPendingPayment,
                   canParticipate: participationStatus.canParticipate,
-                  hasPaid: participationStatus.hasPaid
+                  hasPaid: participationStatus.hasPaid,
+                  showingPartial
                 })}
                 
                 {/* Need to pay for challenge */}
-                {participationStatus.needsPayment && challenge.participationPrice > 0 && (
+                {participationStatus.needsPayment && displayChallenge?.participationPrice > 0 && (
                   <div className="space-y-4">
                     {console.log('🖥️ [UI DEBUG] Showing PAYMENT BUTTON')}
                     <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-4">
                       <p className="text-yellow-800 text-sm">
-                        💰 This challenge requires a {challenge.participationPrice} WLD entry fee
+                        💰 This challenge requires a {displayChallenge?.participationPrice} WLD entry fee
                       </p>
                     </div>
                     <AceternityButton
@@ -604,7 +747,7 @@ function ChallengePage() {
                           : 'bg-yellow-500 text-white hover:bg-yellow-600 hover:scale-105'
                       }`}
                     >
-                      {paymentLoading ? 'Processing Payment...' : `Pay ${challenge.participationPrice} WLD to Join`}
+                      {paymentLoading ? 'Processing Payment...' : `Pay ${displayChallenge?.participationPrice} WLD to Join`}
                     </AceternityButton>
                   </div>
                 )}
@@ -621,26 +764,62 @@ function ChallengePage() {
 
                 {/* Can participate (paid or free) */}
                 {participationStatus.canParticipate && (
-                  <div className="space-y-4">
+                  <div 
+                    className="space-y-4"
+                    style={{
+                      userSelect: 'none',
+                      WebkitUserSelect: 'none',
+                      WebkitTouchCallout: 'none',
+                      WebkitTapHighlightColor: 'transparent',
+                      touchAction: 'manipulation'
+                    }}
+                  >
                     {console.log('🖥️ [UI DEBUG] Showing JOIN CHALLENGE BUTTON')}
-                    {challenge.participationPrice > 0 && participationStatus.hasPaid && (
+                    {displayChallenge?.participationPrice > 0 && participationStatus.hasPaid && (
                       <div className="bg-green-50 border border-green-200 rounded-xl p-4 mb-4">
                         <p className="text-green-800 text-sm">
                           ✅ Payment confirmed! You can now join the challenge.
                         </p>
                       </div>
                     )}
-                    <AceternityButton
-                      onClick={handleParticipate}
-                      disabled={isNavigating}
-                      className={`px-8 py-3 rounded-full text-sm font-medium transition-all duration-200 ${
-                        isNavigating 
-                          ? 'bg-gray-200 text-gray-400 cursor-not-allowed' 
-                          : 'bg-black text-white hover:bg-gray-900 hover:scale-105'
-                      }`}
+                    <div
+                      ref={buttonRef}
+                      className="px-8 py-3 rounded-full text-sm font-medium bg-black text-white hover:bg-gray-900 cursor-pointer select-none text-center relative z-50"
+                      style={{
+                        userSelect: 'none',
+                        WebkitUserSelect: 'none',
+                        WebkitTouchCallout: 'none',
+                        WebkitTapHighlightColor: 'transparent',
+                        touchAction: 'manipulation',
+                        isolation: 'isolate'
+                      }}
+                      onTouchStart={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        console.log('💥 HYPER RADICAL: touchStart - IMMEDIATE ACTION!')
+                        handleParticipate()
+                      }}
+                      onMouseDown={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        console.log('💥 HYPER RADICAL: mouseDown - IMMEDIATE ACTION!')
+                        handleParticipate()
+                      }}
+                      onPointerDown={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        console.log('💥 HYPER RADICAL: pointerDown - IMMEDIATE ACTION!')
+                        handleParticipate()
+                      }}
+                      onClick={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        console.log('💥 HYPER RADICAL: click - BACKUP ACTION!')
+                        handleParticipate()
+                      }}
                     >
-                      {isNavigating ? 'Starting...' : 'Join Challenge'}
-                    </AceternityButton>
+                      {isJoining ? 'Joining...' : isNavigating ? 'Starting...' : showingPartial ? 'Loading...' : 'Join Challenge'}
+                    </div>
                   </div>
                 )}
 
@@ -656,20 +835,20 @@ function ChallengePage() {
               </div>
             )}
 
-            {challenge.status === 'upcoming' && (
+            {displayChallenge?.status === 'upcoming' && (
               <div className="bg-gray-50 rounded-2xl p-6">
                 <p className="text-gray-500 text-sm">
-                  Challenge starts {formatDate(challenge.startDate)}
+                  {showingPartial ? 'Loading start date...' : `Challenge starts ${formatDate(displayChallenge.startDate)}`}
                 </p>
-                {challenge.participationPrice > 0 && (
+                {displayChallenge?.participationPrice > 0 && (
                   <p className="text-gray-400 text-xs mt-2">
-                    Entry fee: {challenge.participationPrice} WLD
+                    Entry fee: {displayChallenge.participationPrice} WLD
                   </p>
                 )}
               </div>
             )}
 
-            {challenge.status === 'completed' && (
+            {displayChallenge?.status === 'completed' && (
               <div className="bg-gray-50 rounded-2xl p-6">
                 <p className="text-gray-500 text-sm">
                   This challenge has ended
