@@ -2,12 +2,15 @@
 
 import { useState, useEffect } from 'react'
 import { apiService } from '@/utils/api'
+import { useChallenges } from '@/contexts/ChallengesContext'
+import Link from 'next/link'
 
 export default function TestChallengesPage() {
   const [challenges, setChallenges] = useState<any[]>([])
   const [stats, setStats] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [initLoading, setInitLoading] = useState(false)
+  const { setChallengesList } = useChallenges()
 
   useEffect(() => {
     loadData()
@@ -24,6 +27,7 @@ export default function TestChallengesPage() {
       // Charger les challenges actifs
       const challengesResponse = await apiService.getActiveChallenges()
       setChallenges(challengesResponse.challenges || [])
+      setChallengesList(challengesResponse.challenges || [])
       
     } catch (error) {
       console.error('Error loading data:', error)
@@ -122,12 +126,12 @@ export default function TestChallengesPage() {
                         <span>Status: {challenge.status}</span>
                       </div>
                     </div>
-                    <button
-                      onClick={() => window.open(`/challenge/${challenge._id}`, '_blank')}
+                    <Link
+                      href={`/challenge/${challenge._id}`}
                       className="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded text-sm"
                     >
                       View
-                    </button>
+                    </Link>
                   </div>
                 </div>
               ))}

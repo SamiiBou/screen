@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import './globals.css'
 import ErudaDebugger from '@/components/ErudaDebugger'
 import { AuthProvider } from '@/contexts/AuthContext'
+import { ChallengesProvider } from '@/contexts/ChallengesContext'
 import { MiniKitProvider } from '@worldcoin/minikit-js/minikit-provider'
 
 export const metadata: Metadata = {
@@ -24,7 +25,9 @@ export default function RootLayout({
         <ErudaDebugger />
         <MiniKitProvider>
           <AuthProvider>
-            {children}
+            <ChallengesProvider>
+              {children}
+            </ChallengesProvider>
           </AuthProvider>
         </MiniKitProvider>
       </body>
