@@ -787,6 +787,7 @@ function ChallengePage() {
                     )}
                     <button
                       type="button"
+
                       ref={buttonRef}
                       className="px-8 py-3 rounded-full text-sm font-medium bg-black text-white hover:bg-gray-900 cursor-pointer select-none text-center relative z-50"
                       style={{
@@ -802,6 +803,7 @@ function ChallengePage() {
                         e.stopPropagation()
                         handleParticipate()
                       }}
+
                       onClick={(e) => {
                         e.preventDefault()
                         e.stopPropagation()
