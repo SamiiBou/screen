@@ -276,15 +276,15 @@ function HomePage() {
                         <div className="w-2 h-2 bg-green-400 rounded-full mt-1 ml-auto"></div>
                       </div>
                       <button
-                        onClick={(e) => {
+                        type="button"
+                        onPointerDown={(e) => {
                           e.preventDefault()
                           e.stopPropagation()
                           handleChallengeClick(challenge._id, e, e.currentTarget)
                         }}
-                        onMouseDown={(e) => {
+                        onClick={(e) => {
                           e.preventDefault()
                           e.stopPropagation()
-                          // SUPER RADICAL: Action immédiate sur mousedown
                           handleChallengeClick(challenge._id, e, e.currentTarget)
                         }}
                         onMouseEnter={() => preloadChallengeOnHover(challenge._id)}
