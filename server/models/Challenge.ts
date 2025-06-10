@@ -3,11 +3,12 @@ import mongoose, { Document, Schema } from 'mongoose'
 export interface IChallenge extends Document {
   title: string
   description: string
-  startDate: Date
-  endDate: Date
   maxParticipants: number
   currentParticipants: number
-  prizePool: number
+  firstPrize: number
+  secondPrize: number
+  thirdPrize: number
+  participationPrice: number
   status: 'upcoming' | 'active' | 'completed'
   createdAt: Date
 }
@@ -27,20 +28,6 @@ const ChallengeSchema: Schema = new Schema({
     minlength: [10, 'La description doit faire au moins 10 caractères'],
     maxlength: [500, 'La description ne peut pas dépasser 500 caractères']
   },
-  startDate: {
-    type: Date,
-    required: [true, 'La date de début est requise']
-  },
-  endDate: {
-    type: Date,
-    required: [true, 'La date de fin est requise'],
-    validate: {
-      validator: function(this: IChallenge, value: Date) {
-        return value > this.startDate
-      },
-      message: 'La date de fin doit être après la date de début'
-    }
-  },
   maxParticipants: {
     type: Number,
     default: 1000,
@@ -52,10 +39,26 @@ const ChallengeSchema: Schema = new Schema({
     default: 0,
     min: [0, 'Le nombre de participants ne peut pas être négatif']
   },
-  prizePool: {
+  firstPrize: {
     type: Number,
-    default: 0,
-    min: [0, 'La cagnotte ne peut pas être négative']
+    required: [true, 'Le prix du 1er est requis'],
+    min: [0, 'Le prix du 1er ne peut pas être négatif']
+  },
+  secondPrize: {
+    type: Number,
+    required: [true, 'Le prix du 2ème est requis'],
+    min: [0, 'Le prix du 2ème ne peut pas être négatif']
+  },
+  thirdPrize: {
+    type: Number,
+    required: [true, 'Le prix du 3ème est requis'],
+    min: [0, 'Le prix du 3ème ne peut pas être négatif']
+  },
+  participationPrice: {
+    type: Number,
+    required: [true, 'Le prix de participation est requis'],
+    min: [0, 'Le prix de participation ne peut pas être négatif'],
+    default: 0
   },
   status: {
     type: String,

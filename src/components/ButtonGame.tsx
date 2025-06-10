@@ -17,7 +17,9 @@ export default function ButtonGame({ challengeId }: ButtonGameProps) {
   const [pressed, setPressed] = useState(false)
   const [points, setPoints] = useState(0)
   const [seconds, setSeconds] = useState(0)
+  const [milliseconds, setMilliseconds] = useState(0)
   const [challenge, setChallenge] = useState<any>(null)
+  const [hasPlayed, setHasPlayed] = useState(false)
   
   // Position du bouton
   const [pos, setPos] = useState({ x: 50, y: 50 })
@@ -25,15 +27,24 @@ export default function ButtonGame({ challengeId }: ButtonGameProps) {
   const [timer, setTimer] = useState(3)
   const [showTimer, setShowTimer] = useState(false)
   const [moveEffect, setMoveEffect] = useState(false)
+  const [isMoving, setIsMoving] = useState(false)
   
   // Refs
   const mainTimer = useRef<NodeJS.Timeout | null>(null)
   const moveTimer = useRef<NodeJS.Timeout | null>(null) 
   const waitTimer = useRef<NodeJS.Timeout | null>(null)
   const gameRef = useRef<HTMLDivElement>(null)
+  const phaseRef = useRef<'start' | 'game' | 'over'>('start')
+  const gameStartTime = useRef<number>(0)
   
   const { user } = useAuth()
   const router = useRouter()
+
+  // Synchroniser phaseRef avec phase
+  useEffect(() => {
+    phaseRef.current = phase
+    console.log('🔄 Phase mise à jour:', phase)
+  }, [phase])
 
   // Blocage total mobile
   useEffect(() => {
@@ -99,12 +110,15 @@ export default function ButtonGame({ challengeId }: ButtonGameProps) {
     }
   }, [challengeId])
 
-  // Chrono de jeu
+  // Chrono de jeu avec millisecondes
   useEffect(() => {
     if (phase === 'game') {
       mainTimer.current = setInterval(() => {
-        setSeconds(s => s + 1)
-      }, 1000)
+        const now = Date.now()
+        const elapsed = now - gameStartTime.current
+        setSeconds(Math.floor(elapsed / 1000))
+        setMilliseconds(elapsed % 1000)
+      }, 10) // Update every 10ms for precision
     } else {
       if (mainTimer.current) {
         clearInterval(mainTimer.current)
@@ -147,18 +161,31 @@ export default function ButtonGame({ challengeId }: ButtonGameProps) {
   }
 
   const scheduleMove = () => {
-    if (phase !== 'game') return
+    console.log('🎯 scheduleMove appelé, phase state:', phase, 'phase ref:', phaseRef.current)
+    
+    if (phaseRef.current !== 'game') {
+      console.log('❌ scheduleMove annulé, phase ref:', phaseRef.current)
+      return
+    }
 
+    console.log('🚀 Début du mouvement du bouton')
+    
+    // Marquer qu'on est en train de déplacer
+    setIsMoving(true)
+    
     // déplacer le bouton
     newPosition()
     setMoveEffect(true)
     setTimeout(() => setMoveEffect(false), 700)
 
-
+    // IMPORTANT: L'utilisateur doit enlever son doigt maintenant
+    console.log('👆 L\'utilisateur doit maintenant enlever son doigt')
     setPressed(false)
 
     // démarrer le décompte lorsque la transition est terminée
     setTimeout(() => {
+      console.log('⏰ Début du décompte de 3 secondes')
+      setIsMoving(false)
       setWaiting(true)
       setShowTimer(true)
       setTimer(3)
@@ -166,9 +193,11 @@ export default function ButtonGame({ challengeId }: ButtonGameProps) {
       let count = 3
       waitTimer.current = setInterval(() => {
         count--
+        console.log('⏱️ Décompte:', count)
         setTimer(count)
 
         if (count <= 0) {
+          console.log('💀 Timeout - Temps écoulé')
           finish('timeout')
         }
       }, 1000)
@@ -176,25 +205,43 @@ export default function ButtonGame({ challengeId }: ButtonGameProps) {
 
     // Prochain mouvement
     const delay = 8000 + Math.random() * 4000
+    console.log('⏳ Prochain mouvement programmé dans', Math.round(delay/1000), 'secondes')
     moveTimer.current = setTimeout(scheduleMove, delay)
   }
 
   const begin = () => {
+    console.log('🎮 Début du jeu')
     setPhase('game')
+    setHasPlayed(true)
     setPoints(0)
     setSeconds(0)
+    setMilliseconds(0)
     setWaiting(false)
     setShowTimer(false)
+    setIsMoving(false)
     setPressed(true)
     
+    // Enregistrer le temps de début
+    gameStartTime.current = Date.now()
+    
     // Premier mouvement dans 5s
+    console.log('⏱️ Premier mouvement programmé dans 5 secondes')
     moveTimer.current = setTimeout(scheduleMove, 5000)
   }
 
-  const finish = async (reason: 'timeout' | 'released') => {
+  const finish = async (reason: 'timeout' | 'voluntary') => {
+    console.log('🏁 Fin de partie, raison:', reason)
+    
+    // Calculer le score final basé sur le temps de survie
+    const finalTimeMs = Date.now() - gameStartTime.current
+    const finalScore = Math.floor(finalTimeMs / 10) // Score en centisecondes pour l'affichage
+    
+    console.log('⏱️ Temps de survie:', finalTimeMs, 'ms, Score:', finalScore, 'Défis complétés:', points)
+    
     setPhase('over')
     setWaiting(false)
     setShowTimer(false)
+    setPoints(finalScore)
     
     // Nettoyer timers
     if (moveTimer.current) {
@@ -206,27 +253,35 @@ export default function ButtonGame({ challengeId }: ButtonGameProps) {
       waitTimer.current = null
     }
     
-    // Sauvegarder
+    // Sauvegarder avec les vraies valeurs
     if (challengeId && user) {
       try {
         await apiService.participateInChallenge(challengeId, {
-          timeHeld: points,
-          challengesCompleted: 1,
+          timeHeld: finalTimeMs, // Temps réel en millisecondes
+          challengesCompleted: points, // Nombre de défis réellement complétés
+          eliminationReason: reason
+        })
+        console.log('✅ Participation sauvegardée:', {
+          timeHeld: finalTimeMs,
+          challengesCompleted: points,
           eliminationReason: reason
         })
       } catch (error) {
-        console.error('Erreur sauvegarde:', error)
+        console.error('❌ Erreur sauvegarde:', error)
       }
     }
   }
 
   const onPress = () => {
+    console.log('👆 onPress appelé, phase:', phase, 'waiting:', waiting, 'showTimer:', showTimer)
+    
     if (phase === 'start') {
       begin()
       return
     }
     
     if (phase === 'game' && waiting && showTimer) {
+      console.log('🎯 Succès ! L\'utilisateur a appuyé sur le nouveau bouton à temps')
       // Succès !
       setWaiting(false)
       setShowTimer(false)
@@ -242,8 +297,11 @@ export default function ButtonGame({ challengeId }: ButtonGameProps) {
   }
 
   const onRelease = () => {
-    if (phase === 'game' && !waiting) {
-      finish('released')
+    console.log('👇 onRelease appelé, phase:', phase, 'waiting:', waiting, 'isMoving:', isMoving, 'showTimer:', showTimer)
+    
+    if (phase === 'game' && !waiting && !isMoving) {
+      console.log('💀 Game Over: utilisateur a lâché le bouton pendant le jeu normal')
+      finish('voluntary')
     }
     setPressed(false)
   }
@@ -255,6 +313,7 @@ export default function ButtonGame({ challengeId }: ButtonGameProps) {
     setPos({ x: 50, y: 50 })
     setWaiting(false)
     setShowTimer(false)
+    setIsMoving(false)
     setPressed(false)
     
     // Nettoyer
@@ -296,101 +355,91 @@ export default function ButtonGame({ challengeId }: ButtonGameProps) {
       onScroll={e => { e.preventDefault(); e.stopPropagation() }}
     >
       
-      {/* En-tête */}
-      <header style={{
-        position: 'absolute',
-        top: '12px',
-        left: '12px',
-        right: '12px',
-        zIndex: 100,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        height: '60px'
-      }}>
-        <AceternityButton 
+      {/* Mini Header */}
+      <motion.header
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          zIndex: 100,
+          height: '50px',
+          background: 'rgba(255, 255, 255, 0.95)',
+          backdropFilter: 'blur(10px)',
+          borderBottom: '1px solid rgba(0, 0, 0, 0.05)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '0 16px'
+        }}
+      >
+        {/* Bouton retour */}
+        <button 
           onClick={() => router.push('/')}
-          className="bg-gray-100 text-black px-3 py-2 rounded-full hover:bg-gray-200 text-sm"
+          style={{
+            background: 'none',
+            border: 'none',
+            fontSize: '20px',
+            color: '#666',
+            cursor: 'pointer',
+            padding: '6px',
+            borderRadius: '50%',
+            width: '32px',
+            height: '32px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}
         >
-          ← Retour
-        </AceternityButton>
-        
-        <h1 style={{
-          fontSize: '16px',
-          fontWeight: '600',
-          color: '#000000',
-          margin: 0,
-          textAlign: 'center',
-          flex: 1
-        }}>
-          {challenge?.title || 'Défi'}
-        </h1>
-        
-        <div style={{ width: '70px' }} />
-      </header>
+          ←
+        </button>
 
-      {/* Score */}
-      <div style={{
-        position: 'absolute',
-        top: '80px',
-        left: '50%',
-        transform: 'translateX(-50%)',
-        zIndex: 90,
-        backgroundColor: '#f5f5f5',
-        borderRadius: '12px',
-        padding: '10px 20px',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '20px',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-      }}>
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '12px', color: '#666666', marginBottom: '2px' }}>Points</div>
-          <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#000000' }}>{points}</div>
-        </div>
-        {phase === 'game' && (
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '12px', color: '#666666', marginBottom: '2px' }}>Temps</div>
-            <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#000000' }}>
-              {Math.floor(seconds / 60)}:{(seconds % 60).toString().padStart(2, '0')}
-            </div>
-          </div>
-        )}
-      </div>
+        {/* Message central ou score */}
+        <AnimatePresence mode="wait">
+          {showTimer ? (
+            <motion.div
+              key="timer"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              style={{
+                fontSize: '13px',
+                fontWeight: '500',
+                color: '#dc2626',
+                textAlign: 'center'
+              }}
+            >
+              Hold new position • {timer}s left
+            </motion.div>
+          ) : (
+            <motion.div
+              key="score"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '16px',
+                fontSize: '13px',
+                fontWeight: '500',
+                color: '#333'
+              }}
+            >
+              {phase === 'game' ? (
+                <span>{Math.floor(seconds / 60)}:{(seconds % 60).toString().padStart(2, '0')}.{Math.floor(milliseconds / 10).toString().padStart(2, '0')}</span>
+              ) : (
+                <span>Score: {points}</span>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-      {/* Décompte */}
-      <AnimatePresence>
-        {showTimer && (
-          <motion.div
-            initial={{ opacity: 0, scale: 3 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0 }}
-            style={{
-              position: 'absolute',
-              top: '30%',
-              left: '50%',
-              transform: 'translate(-50%, -50%)',
-              zIndex: 110,
-              width: '80px',
-              height: '80px',
-              backgroundColor: '#dc2626',
-              borderRadius: '50%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: '0 4px 20px rgba(220, 38, 38, 0.4)'
-            }}
-          >
-            <span style={{
-              fontSize: '32px',
-              fontWeight: 'bold',
-              color: '#ffffff'
-            }}>
-              {timer}
-            </span>
-          </motion.div>
-        )}
-      </AnimatePresence>
+        {/* Espaceur pour équilibrer */}
+        <div style={{ width: '32px' }} />
+      </motion.header>
 
       {/* LE BOUTON */}
       <AnimatePresence>
@@ -499,8 +548,8 @@ export default function ButtonGame({ challengeId }: ButtonGameProps) {
             style={{
               position: 'absolute',
               top: `calc(${pos.y}% + 80px)`,
-              left: `${pos.x}%`,
-              transform: 'translate(-50%, 0)',
+              left: '28%',
+              transform: 'translateX(-50%)',
               zIndex: 70,
               textAlign: 'center'
             }}
@@ -558,15 +607,22 @@ export default function ButtonGame({ challengeId }: ButtonGameProps) {
                 color: '#666666',
                 margin: '0 0 6px 0'
               }}>
-                Score final
+                Temps de survie
               </p>
               <p style={{
                 fontSize: '56px',
                 fontWeight: 'bold',
                 color: '#000000',
+                margin: '0 0 8px 0'
+              }}>
+                {Math.floor(seconds / 60)}:{(seconds % 60).toString().padStart(2, '0')}.{Math.floor(milliseconds / 10).toString().padStart(2, '0')}
+              </p>
+              <p style={{
+                fontSize: '14px',
+                color: '#999999',
                 margin: '0 0 24px 0'
               }}>
-                {points}
+                Score: {points} points
               </p>
               
               <div style={{ 
@@ -574,18 +630,22 @@ export default function ButtonGame({ challengeId }: ButtonGameProps) {
                 flexDirection: 'column', 
                 gap: '12px' 
               }}>
-                <AceternityButton 
-                  onClick={restart}
-                  className="bg-black text-white px-6 py-3 rounded-full text-base font-semibold hover:bg-gray-800 w-full"
-                >
-                  Rejouer
-                </AceternityButton>
+                <div style={{
+                  padding: '16px 24px',
+                  backgroundColor: '#f5f5f5',
+                  borderRadius: '16px',
+                  fontSize: '14px',
+                  color: '#666',
+                  textAlign: 'center'
+                }}>
+                  Une seule tentative autorisée
+                </div>
                 
                 <AceternityButton 
                   onClick={() => router.push('/')}
                   className="bg-gray-100 text-black px-6 py-3 rounded-full text-base font-semibold hover:bg-gray-200 w-full"
                 >
-                  Accueil
+                  Retour à l'accueil
                 </AceternityButton>
               </div>
             </div>

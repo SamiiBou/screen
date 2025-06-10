@@ -16,10 +16,11 @@ export default function AddChallengeForm({ onSuccess }: AddChallengeFormProps) {
   const [fields, setFields] = useState({
     title: '',
     description: '',
-    startDate: '',
-    endDate: '',
     maxParticipants: 100,
-    prizePool: 0
+    firstPrize: 0,
+    secondPrize: 0,
+    thirdPrize: 0,
+    participationPrice: 0
   })
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -31,10 +32,14 @@ export default function AddChallengeForm({ onSuccess }: AddChallengeFormProps) {
     setError(null)
     setSuccess(null)
     setLoading(true)
+    
+    console.log('🆕 [FORM DEBUG] ===== SUBMITTING CHALLENGE FORM =====')
+    console.log('🆕 [FORM DEBUG] Raw fields:', fields)
+    
     try {
       // Validation simple
-      if (!fields.title || !fields.description || !fields.startDate || !fields.endDate) {
-        setError('Tous les champs sont requis')
+      if (!fields.title || !fields.description) {
+        setError('Titre et description sont requis')
         setLoading(false)
         return
       }
@@ -48,27 +53,44 @@ export default function AddChallengeForm({ onSuccess }: AddChallengeFormProps) {
         setLoading(false)
         return
       }
-      if (new Date(fields.endDate) <= new Date(fields.startDate)) {
-        setError('La date de fin doit être après la date de début')
+      if (fields.firstPrize <= 0 || fields.secondPrize <= 0 || fields.thirdPrize <= 0) {
+        setError('Tous les prix doivent être supérieurs à 0')
         setLoading(false)
         return
       }
-      await apiService.createChallenge({
+
+      const challengeData = {
         ...fields,
         maxParticipants: Number(fields.maxParticipants),
-        prizePool: Number(fields.prizePool)
+        firstPrize: Number(fields.firstPrize),
+        secondPrize: Number(fields.secondPrize),
+        thirdPrize: Number(fields.thirdPrize),
+        participationPrice: Number(fields.participationPrice)
+      }
+
+      console.log('🆕 [FORM DEBUG] Challenge data to send:', challengeData)
+      console.log('🆕 [FORM DEBUG] Participation price details:', {
+        rawValue: fields.participationPrice,
+        convertedValue: Number(fields.participationPrice),
+        type: typeof Number(fields.participationPrice)
       })
+
+      const response = await apiService.createChallenge(challengeData)
+      console.log('🆕 [FORM DEBUG] Create challenge response:', response)
+
       setSuccess('Challenge créé avec succès !')
       setFields({
         title: '',
         description: '',
-        startDate: '',
-        endDate: '',
         maxParticipants: 100,
-        prizePool: 0
+        firstPrize: 0,
+        secondPrize: 0,
+        thirdPrize: 0,
+        participationPrice: 0
       })
       if (onSuccess) onSuccess()
     } catch (err: any) {
+      console.error('❌ [FORM DEBUG] Error creating challenge:', err)
       setError(err.message || 'Erreur lors de la création du challenge')
     } finally {
       setLoading(false)
@@ -78,49 +100,52 @@ export default function AddChallengeForm({ onSuccess }: AddChallengeFormProps) {
   return (
     <div className="mb-8">
       <AceternityButton
-        className="bg-black text-white px-6 py-3 rounded-full hover:bg-gray-800 transition-colors mb-4"
+        className="text-gray-500 hover:text-black transition-colors text-sm font-medium mb-8"
         onClick={() => setOpen((v) => !v)}
       >
-        {open ? 'Fermer le formulaire' : 'Ajouter un challenge'}
+        {open ? '\u2212 Close' : '+ Add Challenge'}
       </AceternityButton>
       {open && (
-        <form onSubmit={handleSubmit} className="bg-white border border-gray-200 rounded-2xl p-6 space-y-4 shadow-md max-w-xl mx-auto">
+        <form onSubmit={handleSubmit} className="bg-white border border-gray-100 rounded-2xl p-8 space-y-6 max-w-lg mx-auto">
           <div>
-            <Label htmlFor="title">Titre</Label>
+            <Label htmlFor="title" className="text-sm font-medium text-gray-600">TITLE</Label>
             <Input id="title" name="title" value={fields.title} onChange={handleChange} required minLength={3} className="mt-1" />
           </div>
           <div>
-            <Label htmlFor="description">Description</Label>
+            <Label htmlFor="description" className="text-sm font-medium text-gray-600">DESCRIPTION</Label>
             <textarea id="description" name="description" value={fields.description} onChange={handleChange} required minLength={10} className="mt-1 w-full rounded-md border border-input px-3 py-1 text-base shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring" />
           </div>
-          <div className="flex gap-4">
-            <div className="flex-1">
-              <Label htmlFor="startDate">Début</Label>
-              <Input id="startDate" name="startDate" type="datetime-local" value={fields.startDate} onChange={handleChange} required className="mt-1" />
+          <div>
+            <Label htmlFor="maxParticipants" className="text-sm font-medium text-gray-600">MAX PLAYERS</Label>
+            <Input id="maxParticipants" name="maxParticipants" type="number" min={1} max={10000} value={fields.maxParticipants} onChange={handleChange} required className="mt-1" />
+          </div>
+          <div className="grid grid-cols-3 gap-4">
+            <div>
+              <Label htmlFor="firstPrize" className="text-sm font-medium text-gray-600">1ER PRIX (WLD)</Label>
+              <Input id="firstPrize" name="firstPrize" type="number" min={0} step="0.1" value={fields.firstPrize} onChange={handleChange} required className="mt-1" />
             </div>
-            <div className="flex-1">
-              <Label htmlFor="endDate">Fin</Label>
-              <Input id="endDate" name="endDate" type="datetime-local" value={fields.endDate} onChange={handleChange} required className="mt-1" />
+            <div>
+              <Label htmlFor="secondPrize" className="text-sm font-medium text-gray-600">2EME PRIX (WLD)</Label>
+              <Input id="secondPrize" name="secondPrize" type="number" min={0} step="0.1" value={fields.secondPrize} onChange={handleChange} required className="mt-1" />
+            </div>
+            <div>
+              <Label htmlFor="thirdPrize" className="text-sm font-medium text-gray-600">3EME PRIX (WLD)</Label>
+              <Input id="thirdPrize" name="thirdPrize" type="number" min={0} step="0.1" value={fields.thirdPrize} onChange={handleChange} required className="mt-1" />
             </div>
           </div>
-          <div className="flex gap-4">
-            <div className="flex-1">
-              <Label htmlFor="maxParticipants">Participants max</Label>
-              <Input id="maxParticipants" name="maxParticipants" type="number" min={1} max={10000} value={fields.maxParticipants} onChange={handleChange} required className="mt-1" />
-            </div>
-            <div className="flex-1">
-              <Label htmlFor="prizePool">Cagnotte (€)</Label>
-              <Input id="prizePool" name="prizePool" type="number" min={0} value={fields.prizePool} onChange={handleChange} required className="mt-1" />
-            </div>
+          <div>
+            <Label htmlFor="participationPrice" className="text-sm font-medium text-gray-600">PARTICIPATION PRICE (WLD)</Label>
+            <Input id="participationPrice" name="participationPrice" type="number" min={0} step="0.1" value={fields.participationPrice} onChange={handleChange} required className="mt-1" />
+            <p className="text-xs text-gray-500 mt-1">Prix d'entrée en WLD (0 pour un challenge gratuit)</p>
           </div>
           {error && <div className="text-red-500 text-sm">{error}</div>}
           {success && <div className="text-green-600 text-sm">{success}</div>}
           <AceternityButton
             type="submit"
-            className="bg-black text-white px-6 py-3 rounded-full hover:bg-gray-800 transition-colors w-full"
+            className="bg-black text-white px-8 py-3 rounded-full hover:bg-gray-900 transition-all duration-200 w-full text-sm font-medium hover:scale-105"
             disabled={loading}
           >
-            {loading ? 'Création...' : 'Créer le challenge'}
+            {loading ? 'Creating...' : 'Create Challenge'}
           </AceternityButton>
         </form>
       )}

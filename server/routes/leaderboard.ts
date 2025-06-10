@@ -5,6 +5,41 @@ import Challenge from '../models/Challenge'
 
 const router = express.Router()
 
+// Endpoint pour débugger les données - DOIT ÊTRE AVANT /challenge/:challengeId
+router.get('/debug/challenge/:challengeId', async (req, res) => {
+  try {
+    const { challengeId } = req.params
+    
+    console.log('🔍 Debug des participations pour le challenge:', challengeId)
+    
+    const participations = await Participation.find({ challengeId })
+      .populate('userId', 'username')
+      .sort({ timeHeld: -1 })
+    
+    const debugData = participations.map(participation => ({
+      _id: participation._id,
+      username: (participation.userId as any).username,
+      timeHeld: participation.timeHeld,
+      timeHeldType: typeof participation.timeHeld,
+      challengesCompleted: participation.challengesCompleted,
+      rank: participation.rank,
+      eliminationReason: participation.eliminationReason,
+      createdAt: participation.createdAt
+    }))
+    
+    console.log('📊 Données de debug:', debugData)
+    
+    res.json({
+      message: 'Données de debug',
+      participations: debugData,
+      count: debugData.length
+    })
+  } catch (error) {
+    console.error('Erreur debug:', error)
+    res.status(500).json({ message: 'Erreur serveur' })
+  }
+})
+
 router.get('/challenge/:challengeId', async (req, res) => {
   try {
     const { challengeId } = req.params
@@ -25,14 +60,24 @@ router.get('/challenge/:challengeId', async (req, res) => {
 
     const totalParticipants = await Participation.countDocuments({ challengeId })
 
-    const leaderboard = participations.map(participation => ({
-      rank: participation.rank,
-      username: (participation.userId as any).username,
-      timeHeld: participation.timeHeld,
-      challengesCompleted: participation.challengesCompleted,
-      eliminationReason: participation.eliminationReason,
-      participationDate: participation.createdAt
-    }))
+    const leaderboard = participations.map(participation => {
+      // Log pour debug
+      console.log('🔍 Participation data:', {
+        username: (participation.userId as any).username,
+        timeHeld: participation.timeHeld,
+        challengesCompleted: participation.challengesCompleted,
+        rank: participation.rank
+      })
+      
+      return {
+        rank: participation.rank,
+        username: (participation.userId as any).username,
+        timeHeld: participation.timeHeld,
+        challengesCompleted: participation.challengesCompleted,
+        eliminationReason: participation.eliminationReason,
+        participationDate: participation.createdAt
+      }
+    })
 
     res.json({
       challenge: {

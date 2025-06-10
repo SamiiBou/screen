@@ -3,21 +3,209 @@
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { motion } from 'motion/react'
-import { apiService } from '@/utils/api'
+import { apiService, LeaderboardEntry } from '@/utils/api'
 import { useAuth } from '@/contexts/AuthContext'
 import AuthGate from '@/components/AuthGate'
 import { AceternityButton } from '@/components/ui/AceternityButton'
+import { MiniKit, tokenToDecimals, Tokens, PayCommandInput } from '@worldcoin/minikit-js'
 
 interface Challenge {
   _id: string
   title: string
   description: string
-  startDate: string
-  endDate: string
   maxParticipants: number
   currentParticipants: number
-  prizePool: number
+  firstPrize: number
+  secondPrize: number
+  thirdPrize: number
+  participationPrice: number
   status: 'upcoming' | 'active' | 'completed'
+}
+
+interface ParticipationStatus {
+  canParticipate: boolean
+  needsPayment: boolean
+  hasPendingPayment: boolean
+  hasPaid: boolean
+  participationPrice: number
+}
+
+// Composant pour afficher le classement du challenge
+function ChallengeLeaderboard({ challengeId }: { challengeId: string }) {
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (challengeId) {
+      loadLeaderboard()
+    }
+  }, [challengeId])
+
+  const loadLeaderboard = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      const data = await apiService.getChallengeLeaderboard(challengeId, 1, 10) // Top 10
+      console.log('📊 Données du classement reçues:', data)
+      setLeaderboard(data.leaderboard || [])
+      
+      // Log des entrées individuelles pour debug
+      if (data.leaderboard && data.leaderboard.length > 0) {
+        data.leaderboard.forEach((entry: LeaderboardEntry, index: number) => {
+          console.log(`👤 Entrée ${index + 1}:`, {
+            username: entry.username,
+            timeHeld: entry.timeHeld,
+            challengesCompleted: entry.challengesCompleted,
+            rank: entry.rank
+          })
+        })
+      }
+    } catch (error: any) {
+      console.error('Error loading leaderboard:', error)
+      setError(error.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const formatTime = (ms: number) => {
+    // Log des valeurs pour debug
+    console.log('⏱️ Formatage du temps:', ms)
+    
+    // Si la valeur semble être trop petite (probablement en centisecondes), la convertir
+    let timeInMs = ms
+    if (ms < 1000 && ms > 0) {
+      // Probablement en centisecondes, convertir en millisecondes
+      timeInMs = ms * 10
+      console.log('🔄 Conversion centisecondes → millisecondes:', ms, '→', timeInMs)
+    }
+    
+    const seconds = Math.floor(timeInMs / 1000)
+    const minutes = Math.floor(seconds / 60)
+    const hours = Math.floor(minutes / 60)
+    
+    if (hours > 0) {
+      return `${hours}h ${minutes % 60}m ${seconds % 60}s`
+    } else if (minutes > 0) {
+      return `${minutes}m ${seconds % 60}s`
+    } else if (seconds > 0) {
+      return `${seconds}s`
+    } else if (timeInMs > 0) {
+      return `${Math.floor(timeInMs)}ms`
+    } else {
+      return '0s'
+    }
+  }
+
+  const getRankDisplay = (rank: number) => {
+    return rank
+  }
+
+  const getRankColor = (rank: number) => {
+    switch (rank) {
+      case 1: return 'text-black'
+      case 2: return 'text-gray-600'
+      case 3: return 'text-gray-600'
+      default: return 'text-gray-500'
+    }
+  }
+
+  if (loading) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.6 }}
+        className="bg-gray-50 rounded-xl p-6 mt-8"
+      >
+        <h3 className="text-2xl font-light text-black mb-8">Classement</h3>
+        <div className="flex items-center justify-center py-8">
+          <motion.div
+            className="w-6 h-6 border-2 border-black border-t-transparent rounded-full"
+            animate={{ rotate: 360 }}
+            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+          />
+        </div>
+      </motion.div>
+    )
+  }
+
+  if (error) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.6 }}
+        className="bg-gray-50 rounded-xl p-6 mt-8"
+      >
+        <h3 className="text-lg font-semibold text-black mb-4">🏆 Classement Actuel</h3>
+        <p className="text-gray-500 text-center py-4">Impossible de charger le classement</p>
+      </motion.div>
+    )
+  }
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.6 }}
+      className="bg-white border border-gray-100 rounded-2xl p-8 mt-12"
+    >
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-lg font-semibold text-black">🏆 Classement Actuel</h3>
+        {leaderboard.length > 0 && (
+          <span className="text-sm text-gray-500">Top {Math.min(leaderboard.length, 10)}</span>
+        )}
+      </div>
+      
+      {leaderboard.length === 0 ? (
+        <div className="text-center py-12">
+          <p className="text-gray-400 text-sm">Aucune participation pour le moment</p>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {leaderboard.slice(0, 10).map((entry, index) => (
+            <motion.div
+              key={entry.rank}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.05 }}
+              className="flex items-center justify-between py-4 border-b border-gray-50 last:border-0"
+            >
+              <div className="flex items-center space-x-3">
+                <div className={`text-sm font-medium ${getRankColor(entry.rank)} min-w-[32px] text-center`}>
+                  {getRankDisplay(entry.rank)}
+                </div>
+                <div>
+                  <div className="font-medium text-black text-sm">
+                    {entry.username}
+                  </div>
+                </div>
+              </div>
+              
+              <div className="text-right">
+                <div className="font-medium text-black text-sm">
+                  {formatTime(entry.timeHeld)}
+                </div>
+              </div>
+            </motion.div>
+          ))}
+          
+          {leaderboard.length > 10 && (
+            <div className="text-center py-2 mt-4">
+              <AceternityButton
+                onClick={() => window.open(`/leaderboard/challenge/${challengeId}`, '_blank')}
+                className="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300 transition-colors text-sm"
+              >
+                Voir le classement complet →
+              </AceternityButton>
+            </div>
+          )}
+        </div>
+      )}
+    </motion.div>
+  )
 }
 
 function ChallengePage() {
@@ -26,9 +214,11 @@ function ChallengePage() {
   const { user } = useAuth()
   const [challenge, setChallenge] = useState<Challenge | null>(null)
   const [loading, setLoading] = useState(true)
-  const [canParticipate, setCanParticipate] = useState(false)
+  const [participationStatus, setParticipationStatus] = useState<ParticipationStatus | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [isNavigating, setIsNavigating] = useState(false)
+  const [paymentLoading, setPaymentLoading] = useState(false)
+  const [notification, setNotification] = useState<{ show: boolean, message: string, type: 'success' | 'error' | 'info' }>({ show: false, message: '', type: 'info' })
 
   const challengeId = params.id as string
 
@@ -38,44 +228,195 @@ function ChallengePage() {
     }
   }, [challengeId])
 
+  useEffect(() => {
+    if (notification.show) {
+      const timer = setTimeout(() => {
+        setNotification({ show: false, message: '', type: 'info' })
+      }, 5000)
+      return () => clearTimeout(timer)
+    }
+  }, [notification.show])
+
   const loadChallengeData = async () => {
     try {
       setLoading(true)
       setError(null)
       
-      console.log('🔍 Loading challenge with ID:', challengeId)
+      console.log('🔍 [CHALLENGE DEBUG] Loading challenge with ID:', challengeId)
       
       // Charger les détails du challenge via l'API service
       const challengeResponse = await apiService.getChallengeById(challengeId)
       
-      console.log('📋 Challenge response:', challengeResponse)
+      console.log('📋 [CHALLENGE DEBUG] Challenge response:', challengeResponse)
       
       if (challengeResponse && challengeResponse.challenge) {
         setChallenge(challengeResponse.challenge)
+        console.log('💰 [CHALLENGE DEBUG] Challenge participation price:', challengeResponse.challenge.participationPrice)
         
         // Vérifier si l'utilisateur peut participer
         try {
+          console.log('🔍 [CHALLENGE DEBUG] Checking participation status...')
           const participationResponse = await apiService.canParticipateInChallenge(challengeId)
-          setCanParticipate(participationResponse.canParticipate)
+          console.log('📊 [CHALLENGE DEBUG] Participation response:', participationResponse)
+          console.log('💳 [CHALLENGE DEBUG] Participation status breakdown:', {
+            canParticipate: participationResponse.canParticipate,
+            needsPayment: participationResponse.needsPayment,
+            hasPendingPayment: participationResponse.hasPendingPayment,
+            hasPaid: participationResponse.hasPaid,
+            participationPrice: participationResponse.participationPrice
+          })
+          setParticipationStatus(participationResponse)
         } catch (err) {
-          console.error('Error checking participation:', err)
-          setCanParticipate(true) // Par défaut, permettre la participation
+          console.error('❌ [CHALLENGE DEBUG] Error checking participation:', err)
+          setParticipationStatus({
+            canParticipate: true,
+            needsPayment: false,
+            hasPendingPayment: false,
+            hasPaid: true,
+            participationPrice: 0
+          })
         }
       } else {
         setError('Challenge not found')
       }
     } catch (error: any) {
-      console.error('❌ Error loading challenge:', error)
+      console.error('❌ [CHALLENGE DEBUG] Error loading challenge:', error)
       setError(`Failed to load challenge: ${error.message || 'Unknown error'}`)
     } finally {
       setLoading(false)
     }
   }
 
+  const handlePayForChallenge = async () => {
+    if (!challenge || !user || paymentLoading) return
+    
+    console.log('💰 [CHALLENGE PAYMENT] Starting payment for challenge:', challengeId)
+    setPaymentLoading(true)
+    setNotification({ show: true, message: "Initiating payment...", type: "info" })
+
+    try {
+      if (!MiniKit.isInstalled()) {
+        console.error('💰 [CHALLENGE PAYMENT] ❌ MiniKit not installed')
+        setNotification({ show: true, message: "World App / MiniKit not detected", type: "error" })
+        setPaymentLoading(false)
+        return
+      }
+
+      console.log('💰 [CHALLENGE PAYMENT] 📡 Initiating payment with backend...')
+      
+      const initResponse = await apiService.initiateChallengePayment(challengeId)
+      console.log('💰 [CHALLENGE PAYMENT] 📨 Initiate response:', initResponse)
+
+      const { reference, participationPrice, paymentAddress } = initResponse
+      console.log('💰 [CHALLENGE PAYMENT] ✅ Payment initiated successfully:', { reference, participationPrice })
+
+      // Prepare payload for World Pay - CORRECTION: utiliser tokenToDecimals
+      const payload: PayCommandInput = {
+        reference: reference,
+        to: paymentAddress,
+        tokens: [
+          {
+            symbol: Tokens.WLD,
+            token_amount: tokenToDecimals(participationPrice, Tokens.WLD).toString(),
+          }
+        ],
+        description: `Join challenge: ${challenge.title}`,
+        network: 'worldchain' // Ajout explicite du réseau
+      }
+
+      console.log('💰 [CHALLENGE PAYMENT] 💰 Payment payload prepared:', payload)
+
+      setNotification({ show: true, message: "Confirming payment...", type: "info" })
+      
+      console.log('💰 [CHALLENGE PAYMENT] 📱 Sending payment via MiniKit...')
+      const { finalPayload } = await MiniKit.commandsAsync.pay(payload)
+
+      console.log('💰 [CHALLENGE PAYMENT] 📱 MiniKit response received:', finalPayload)
+
+      if (finalPayload.status === 'success') {
+        console.log('💰 [CHALLENGE PAYMENT] ✅ Payment successful! Transaction ID:', finalPayload.transaction_id)
+        
+        // CORRECTION: Envoyer transaction_id tel quel (pas de transformation)
+        const confirmResponse = await apiService.confirmChallengePayment(reference, finalPayload.transaction_id)
+        console.log('💰 [CHALLENGE PAYMENT] 📨 Confirm response:', confirmResponse)
+
+        if (confirmResponse.success) {
+          setNotification({ 
+            show: true, 
+            message: `Payment successful! You can now join the challenge.`, 
+            type: "success" 
+          })
+          // Reload participation status
+          await loadChallengeData()
+          console.log('💰 [CHALLENGE PAYMENT] ✅ Payment completed successfully!')
+        } else {
+          throw new Error('Payment confirmation failed')
+        }
+      } else {
+        console.log('💰 [CHALLENGE PAYMENT] ❌ Payment failed or cancelled:', finalPayload)
+        
+        let errorMessage = "Payment cancelled or failed"
+        if (finalPayload.error_code === 'user_rejected') {
+          errorMessage = "Payment cancelled by user"
+        } else if (finalPayload.error_code === 'transaction_failed') {
+          errorMessage = "Transaction failed. Please check your wallet balance and try again."
+        }
+        
+        setNotification({ 
+          show: true, 
+          message: errorMessage, 
+          type: "error" 
+        })
+      }
+    } catch (error: any) {
+      console.error('💰 [CHALLENGE PAYMENT] ❌ CRITICAL ERROR:', error)
+      setNotification({ 
+        show: true, 
+        message: error.message || "Payment failed", 
+        type: "error" 
+      })
+    } finally {
+      setPaymentLoading(false)
+      console.log('💰 [CHALLENGE PAYMENT] 🏁 Payment flow ended')
+    }
+  }
+
   const handleParticipate = async () => {
     if (!challenge || !user || isNavigating) return
     
-    console.log('🏡 Starting challenge:', challengeId)
+    console.log('🏡 [CHALLENGE DEBUG] ===== STARTING CHALLENGE PARTICIPATION =====')
+    console.log('🏡 [CHALLENGE DEBUG] Challenge ID:', challengeId)
+    console.log('🏡 [CHALLENGE DEBUG] Challenge participation price:', challenge.participationPrice)
+    console.log('🏡 [CHALLENGE DEBUG] Current participation status:', participationStatus)
+    
+    // Vérifier si le challenge nécessite un paiement
+    if (challenge.participationPrice > 0) {
+      console.log('💰 [CHALLENGE DEBUG] This is a PAID challenge (price: ' + challenge.participationPrice + ' WLD)')
+      
+      if (!participationStatus) {
+        console.error('❌ [CHALLENGE DEBUG] No participation status available!')
+        setNotification({ show: true, message: "Error: Cannot determine participation status", type: "error" })
+        return
+      }
+      
+      if (participationStatus.needsPayment) {
+        console.error('❌ [CHALLENGE DEBUG] Payment required but user clicked participate instead of pay!')
+        setNotification({ show: true, message: "You need to pay first!", type: "error" })
+        return
+      }
+      
+      if (!participationStatus.hasPaid) {
+        console.error('❌ [CHALLENGE DEBUG] User has not paid for this challenge!')
+        setNotification({ show: true, message: "Payment required to join this challenge", type: "error" })
+        return
+      }
+      
+      console.log('✅ [CHALLENGE DEBUG] Payment verified, proceeding to game...')
+    } else {
+      console.log('🆓 [CHALLENGE DEBUG] This is a FREE challenge')
+    }
+    
+    console.log('🏡 [CHALLENGE DEBUG] All checks passed, starting challenge...')
     setIsNavigating(true)
     
     // Petite pause pour éviter les double-clics
@@ -127,7 +468,6 @@ function ChallengePage() {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="text-center max-w-md mx-auto p-8">
-          <div className="text-4xl mb-4">❌</div>
           <div className="text-black text-2xl font-semibold mb-6">{error || 'Challenge Not Found'}</div>
           <AceternityButton 
             onClick={() => router.push('/')}
@@ -147,31 +487,24 @@ function ChallengePage() {
       <motion.nav 
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-xl border-b border-gray-100"
+        className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-xl"
       >
         <div className="max-w-4xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <AceternityButton 
               onClick={() => router.push('/')}
-              className="bg-gray-100 text-black px-4 py-2 rounded-full hover:bg-gray-200 transition-colors"
+              className="text-gray-500 hover:text-black transition-colors text-sm font-medium"
             >
               ← Back
             </AceternityButton>
             
             <motion.h1 
-              className="text-xl font-bold text-black"
+              className="text-lg font-medium text-black"
               whileHover={{ scale: 1.02 }}
             >
               Challenge
             </motion.h1>
             
-            <div className={`px-3 py-1 rounded-full text-xs font-medium ${
-              challenge.status === 'active' ? 'bg-green-100 text-green-800' :
-              challenge.status === 'upcoming' ? 'bg-yellow-100 text-yellow-800' :
-              'bg-gray-100 text-gray-800'
-            }`}>
-              {challenge.status.toUpperCase()}
-            </div>
           </div>
         </div>
       </motion.nav>
@@ -185,35 +518,29 @@ function ChallengePage() {
             animate={{ opacity: 1, y: 0 }}
             className="text-center mb-12"
           >
-            <h1 className="text-4xl md:text-6xl font-black text-black mb-4">
+            <h1 className="text-5xl md:text-7xl font-light text-black mb-8 tracking-tight">
               {challenge.title}
             </h1>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              {challenge.description}
-            </p>
           </motion.div>
 
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12"
+            className="grid grid-cols-3 gap-8 mb-16 max-w-lg mx-auto"
           >
-            <div className="text-center p-4 border border-gray-200 rounded-xl">
-              <div className="text-2xl font-bold text-black">{challenge.prizePool}€</div>
-              <div className="text-gray-600 text-sm">Prize</div>
+            <div className="text-center">
+              <div className="text-2xl font-light text-black mb-1">{challenge.firstPrize} WLD</div>
+              <div className="text-gray-400 text-xs font-medium">1ST PRIZE</div>
+              <div className="text-sm text-gray-600 mt-1">2nd: {challenge.secondPrize} • 3rd: {challenge.thirdPrize}</div>
             </div>
-            <div className="text-center p-4 border border-gray-200 rounded-xl">
-              <div className="text-2xl font-bold text-black">{challenge.currentParticipants}/{challenge.maxParticipants}</div>
-              <div className="text-gray-600 text-sm">Players</div>
+            <div className="text-center">
+              <div className="text-3xl font-light text-black mb-1">{challenge.currentParticipants}<span className="text-gray-300">/{challenge.maxParticipants}</span></div>
+              <div className="text-gray-400 text-sm font-medium">PLAYERS</div>
             </div>
-            <div className="text-center p-4 border border-gray-200 rounded-xl">
-              <div className="text-2xl font-bold text-black">{formatDate(challenge.startDate).split(',')[0]}</div>
-              <div className="text-gray-600 text-sm">Started</div>
-            </div>
-            <div className="text-center p-4 border border-gray-200 rounded-xl">
-              <div className="text-2xl font-bold text-black">{getTimeRemaining(challenge.endDate)}</div>
-              <div className="text-gray-600 text-sm">Remaining</div>
+            <div className="text-center">
+              <div className="text-3xl font-light text-black mb-1">{challenge.participationPrice} WLD</div>
+              <div className="text-gray-400 text-sm font-medium">ENTRY FEE</div>
             </div>
           </motion.div>
 
@@ -223,46 +550,126 @@ function ChallengePage() {
             transition={{ delay: 0.4 }}
             className="text-center"
           >
-            {challenge.status === 'active' && canParticipate && (
-              <div className="space-y-6">
-                <AceternityButton
-                  onClick={handleParticipate}
-                  disabled={isNavigating}
-                  className={`px-12 py-4 rounded-full text-xl font-semibold transition-colors ${
-                    isNavigating 
-                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
-                      : 'bg-black text-white hover:bg-gray-800'
-                  }`}
-                >
-                  {isNavigating ? 'Starting...' : 'Join Challenge'}
-                </AceternityButton>
-              </div>
+            {/* Notification */}
+            {notification.show && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className={`mb-4 p-4 rounded-xl text-sm ${
+                  notification.type === 'success' ? 'bg-green-50 text-green-700' :
+                  notification.type === 'error' ? 'bg-red-50 text-red-700' :
+                  'bg-blue-50 text-blue-700'
+                }`}
+              >
+                {notification.message}
+              </motion.div>
             )}
 
-            {challenge.status === 'active' && !canParticipate && (
-              <div className="bg-gray-100 rounded-xl p-6">
-                <p className="text-gray-600">
-                  You're already participating in this challenge
-                </p>
+            {challenge.status === 'active' && participationStatus && (
+              <div className="space-y-6">
+                {/* Debug: Show what should be displayed */}
+                {console.log('🖥️ [UI DEBUG] Rendering UI with conditions:', {
+                  challengeStatus: challenge.status,
+                  participationPrice: challenge.participationPrice,
+                  needsPayment: participationStatus.needsPayment,
+                  hasPendingPayment: participationStatus.hasPendingPayment,
+                  canParticipate: participationStatus.canParticipate,
+                  hasPaid: participationStatus.hasPaid
+                })}
+                
+                {/* Need to pay for challenge */}
+                {participationStatus.needsPayment && challenge.participationPrice > 0 && (
+                  <div className="space-y-4">
+                    {console.log('🖥️ [UI DEBUG] Showing PAYMENT BUTTON')}
+                    <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-4">
+                      <p className="text-yellow-800 text-sm">
+                        💰 This challenge requires a {challenge.participationPrice} WLD entry fee
+                      </p>
+                    </div>
+                    <AceternityButton
+                      onClick={handlePayForChallenge}
+                      disabled={paymentLoading}
+                      className={`px-8 py-3 rounded-full text-sm font-medium transition-all duration-200 ${
+                        paymentLoading 
+                          ? 'bg-gray-200 text-gray-400 cursor-not-allowed' 
+                          : 'bg-yellow-500 text-white hover:bg-yellow-600 hover:scale-105'
+                      }`}
+                    >
+                      {paymentLoading ? 'Processing Payment...' : `Pay ${challenge.participationPrice} WLD to Join`}
+                    </AceternityButton>
+                  </div>
+                )}
+
+                {/* Payment pending */}
+                {participationStatus.hasPendingPayment && (
+                  <div className="bg-blue-50 rounded-2xl p-6">
+                    {console.log('🖥️ [UI DEBUG] Showing PENDING PAYMENT')}
+                    <p className="text-blue-700 text-sm">
+                      ⏳ Payment in progress... Please wait for confirmation.
+                    </p>
+                  </div>
+                )}
+
+                {/* Can participate (paid or free) */}
+                {participationStatus.canParticipate && (
+                  <div className="space-y-4">
+                    {console.log('🖥️ [UI DEBUG] Showing JOIN CHALLENGE BUTTON')}
+                    {challenge.participationPrice > 0 && participationStatus.hasPaid && (
+                      <div className="bg-green-50 border border-green-200 rounded-xl p-4 mb-4">
+                        <p className="text-green-800 text-sm">
+                          ✅ Payment confirmed! You can now join the challenge.
+                        </p>
+                      </div>
+                    )}
+                    <AceternityButton
+                      onClick={handleParticipate}
+                      disabled={isNavigating}
+                      className={`px-8 py-3 rounded-full text-sm font-medium transition-all duration-200 ${
+                        isNavigating 
+                          ? 'bg-gray-200 text-gray-400 cursor-not-allowed' 
+                          : 'bg-black text-white hover:bg-gray-900 hover:scale-105'
+                      }`}
+                    >
+                      {isNavigating ? 'Starting...' : 'Join Challenge'}
+                    </AceternityButton>
+                  </div>
+                )}
+
+                {/* Already participating */}
+                {!participationStatus.canParticipate && !participationStatus.needsPayment && !participationStatus.hasPendingPayment && (
+                  <div className="bg-gray-50 rounded-2xl p-6">
+                    {console.log('🖥️ [UI DEBUG] Showing ALREADY PARTICIPATING')}
+                    <p className="text-gray-500 text-sm">
+                      You're already participating in this challenge
+                    </p>
+                  </div>
+                )}
               </div>
             )}
 
             {challenge.status === 'upcoming' && (
-              <div className="bg-gray-100 rounded-xl p-6">
-                <p className="text-gray-600">
+              <div className="bg-gray-50 rounded-2xl p-6">
+                <p className="text-gray-500 text-sm">
                   Challenge starts {formatDate(challenge.startDate)}
                 </p>
+                {challenge.participationPrice > 0 && (
+                  <p className="text-gray-400 text-xs mt-2">
+                    Entry fee: {challenge.participationPrice} WLD
+                  </p>
+                )}
               </div>
             )}
 
             {challenge.status === 'completed' && (
-              <div className="bg-gray-100 rounded-xl p-6">
-                <p className="text-gray-600">
+              <div className="bg-gray-50 rounded-2xl p-6">
+                <p className="text-gray-500 text-sm">
                   This challenge has ended
                 </p>
               </div>
             )}
           </motion.div>
+
+          <ChallengeLeaderboard challengeId={challengeId} />
 
         </div>
       </div>
@@ -276,4 +683,4 @@ export default function Page() {
       <ChallengePage />
     </AuthGate>
   )
-} 
+}

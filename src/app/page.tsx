@@ -13,11 +13,12 @@ interface Challenge {
   _id: string
   title: string
   description: string
-  startDate: string
-  endDate: string
   maxParticipants: number
   currentParticipants: number
-  prizePool: number
+  firstPrize: number
+  secondPrize: number
+  thirdPrize: number
+  participationPrice: number
   status: 'upcoming' | 'active' | 'completed'
 }
 
@@ -70,24 +71,16 @@ function HomePage() {
       <motion.nav 
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-xl border-b border-gray-100"
+        className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-xl"
       >
         <div className="max-w-4xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <motion.h1 
-              className="text-2xl font-bold text-black"
+              className="text-lg font-medium text-black"
               whileHover={{ scale: 1.02 }}
             >
               Button
             </motion.h1>
-            {isAuthenticated && (
-              <AceternityButton 
-                onClick={() => router.push('/leaderboard')}
-                className="bg-black text-white px-4 py-2 rounded-full hover:bg-gray-800 transition-colors"
-              >
-                Leaderboard
-              </AceternityButton>
-            )}
           </div>
         </div>
       </motion.nav>
@@ -102,14 +95,20 @@ function HomePage() {
             animate={{ opacity: 1, y: 0 }}
             className="text-center mb-16"
           >
-            <h2 className="text-6xl md:text-8xl font-black text-black mb-6 leading-none">
+            <h2 className="text-5xl md:text-7xl font-light text-black mb-8 leading-none tracking-tight">
               HOLD THE
               <br />
               BUTTON
             </h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+            <p className="text-lg text-gray-400 max-w-xl mx-auto font-light mb-4">
               Last person holding wins
             </p>
+            <AceternityButton 
+              onClick={() => {}}
+              className="text-gray-500 hover:text-black transition-colors text-sm font-medium"
+            >
+              How to Play
+            </AceternityButton>
           </motion.div>
 
           {/* Ajout du formulaire d'ajout de challenge */}
@@ -136,9 +135,9 @@ function HomePage() {
             >
               <AceternityButton 
                 onClick={() => router.push('/auth')}
-                className="bg-black text-white px-8 py-4 rounded-full text-lg font-semibold hover:bg-gray-800 transition-colors"
+                className="bg-black text-white px-6 py-3 rounded-full text-sm font-medium hover:bg-gray-900 transition-all duration-200 border-none"
               >
-                Connect Wallet to Play
+                Connect Wallet
               </AceternityButton>
             </motion.div>
           ) : activeChallenges.length === 0 ? (
@@ -158,7 +157,7 @@ function HomePage() {
                     console.error('Error creating challenges:', error)
                   }
                 }}
-                className="bg-black text-white px-6 py-3 rounded-full hover:bg-gray-800 transition-colors"
+                className="bg-black text-white px-6 py-3 rounded-full text-sm font-medium hover:bg-gray-900 transition-all duration-200 border-none"
               >
                 Create Challenge
               </AceternityButton>
@@ -176,23 +175,24 @@ function HomePage() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.1 }}
                   onClick={(e) => handleChallengeClick(challenge._id, e)}
-                  className="border border-gray-200 rounded-2xl p-6 cursor-pointer hover:border-black transition-colors select-none"
+                  className="border border-gray-100 rounded-2xl p-6 cursor-pointer hover:border-gray-300 hover:bg-gray-50/50 transition-all duration-200 select-none"
                   style={{ userSelect: 'none' }}
                 >
                   <div className="flex items-center justify-between">
                     <div>
-                      <h3 className="text-xl font-bold text-black mb-1">
+                      <h3 className="text-lg font-medium text-black mb-1">
                         {challenge.title}
                       </h3>
-                      <p className="text-gray-600 text-sm">
-                        {challenge.currentParticipants}/{challenge.maxParticipants} players
+                      <p className="text-gray-400 text-xs font-medium">
+                        {challenge.currentParticipants}/{challenge.maxParticipants} PLAYERS
                       </p>
                     </div>
                     <div className="text-right">
-                      <div className="text-lg font-bold text-black">
-                        {challenge.prizePool}€
+                      <div className="text-right">
+                        <div className="text-sm font-medium text-black">1st: {challenge.firstPrize} WLD</div>
+                        <div className="text-xs text-gray-600">2nd: {challenge.secondPrize} • 3rd: {challenge.thirdPrize}</div>
                       </div>
-                      <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                      <div className="w-2 h-2 bg-green-400 rounded-full mt-1 ml-auto"></div>
                     </div>
                   </div>
                 </motion.div>

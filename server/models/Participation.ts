@@ -8,6 +8,10 @@ export interface IParticipation extends Document {
   eliminationReason: string
   rank: number
   participationDate: Date
+  paymentReference: string
+  transactionId: string
+  wldPaid: number
+  paymentStatus: 'pending' | 'completed' | 'failed'
   createdAt: Date
   updatedAt: Date
 }
@@ -46,6 +50,24 @@ const ParticipationSchema: Schema = new Schema({
   participationDate: {
     type: Date,
     default: Date.now
+  },
+  paymentReference: {
+    type: String,
+    required: [true, 'Payment reference is required']
+  },
+  transactionId: {
+    type: String,
+    default: 'pending'
+  },
+  wldPaid: {
+    type: Number,
+    required: [true, 'WLD amount paid is required'],
+    min: [0, 'WLD paid cannot be negative']
+  },
+  paymentStatus: {
+    type: String,
+    enum: ['pending', 'completed', 'failed'],
+    default: 'pending'
   }
 }, {
   timestamps: true

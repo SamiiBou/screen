@@ -117,7 +117,7 @@ export default function TestChallengesPage() {
                       <h3 className="font-semibold text-lg">{challenge.title}</h3>
                       <p className="text-gray-300 text-sm mb-2">{challenge.description}</p>
                       <div className="text-xs text-gray-400">
-                        <span>Prize: {challenge.prizePool}€ • </span>
+                        <span>Prizes: {challenge.firstPrize}/{challenge.secondPrize}/{challenge.thirdPrize} WLD • </span>
                         <span>Participants: {challenge.currentParticipants}/{challenge.maxParticipants} • </span>
                         <span>Status: {challenge.status}</span>
                       </div>

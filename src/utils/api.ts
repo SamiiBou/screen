@@ -19,6 +19,7 @@ export interface Challenge {
   maxParticipants: number
   currentParticipants: number
   prizePool: number
+  participationPrice: number
   status: 'upcoming' | 'active' | 'completed'
 }
 
@@ -128,7 +129,10 @@ class ApiService {
   }
 
   async getChallengeById(challengeId: string) {
-    return this.request(`/challenges/${challengeId}`)
+    console.log('🔍 [API DEBUG] Getting challenge by ID:', challengeId)
+    const response = await this.request(`/challenges/${challengeId}`)
+    console.log('🔍 [API DEBUG] Challenge response from backend:', response)
+    return response
   }
 
   async initDefaultChallenges() {
@@ -137,11 +141,23 @@ class ApiService {
     })
   }
 
+  async migrateChallengesParticipationPrice() {
+    console.log('🔧 [MIGRATION] Starting migration...')
+    const response = await this.request('/challenges/migrate-participation-price', {
+      method: 'POST'
+    })
+    console.log('🔧 [MIGRATION] Migration response:', response)
+    return response
+  }
+
   async createChallenge(challengeData: any) {
-    return this.request('/challenges/create', {
+    console.log('📡 [API DEBUG] Sending challenge data to backend:', challengeData)
+    const response = await this.request('/challenges/create', {
       method: 'POST',
       body: JSON.stringify(challengeData)
     })
+    console.log('📡 [API DEBUG] Backend response:', response)
+    return response
   }
 
   async joinChallenge(challengeId: string) {
@@ -172,6 +188,18 @@ class ApiService {
     return this.request(`/leaderboard?timeframe=${timeframe}`)
   }
 
+  async getChallengeLeaderboard(challengeId: string, page: number = 1, limit: number = 20) {
+    return this.request(`/leaderboard/challenge/${challengeId}?page=${page}&limit=${limit}`)
+  }
+
+  async getGlobalLeaderboard(page: number = 1, limit: number = 20) {
+    return this.request(`/leaderboard/global?page=${page}&limit=${limit}`)
+  }
+
+  async getUserStats(userId: string) {
+    return this.request(`/leaderboard/user/${userId}`)
+  }
+
   async setupChallenge(challengeData: any) {
     return this.request('/setup/challenge', {
       method: 'POST',
@@ -181,6 +209,53 @@ class ApiService {
 
   async getSetupStatus() {
     return this.request('/setup/status')
+  }
+
+  // Challenge Payment Methods
+  async initiateChallengePayment(challengeId: string) {
+    console.log('🚀 [API SERVICE] Initiating challenge payment request:', { challengeId })
+    const response = await this.request('/challenges/initiate-participation-payment', {
+      method: 'POST',
+      body: JSON.stringify({ challengeId })
+    })
+    console.log('📨 [API SERVICE] Initiate payment response:', response)
+    return response
+  }
+
+  async confirmChallengePayment(reference: string, transactionId: string) {
+    console.log('💰 [API SERVICE] ===== CONFIRMING CHALLENGE PAYMENT =====')
+    console.log('💰 [API SERVICE] Request payload:', { 
+      reference, 
+      transactionId,
+      referenceType: typeof reference,
+      transactionIdType: typeof transactionId,
+      referenceLength: reference?.length,
+      transactionIdLength: transactionId?.length
+    })
+    
+    const requestBody = { reference, transaction_id: transactionId }
+    console.log('💰 [API SERVICE] Request body being sent:', requestBody)
+    console.log('💰 [API SERVICE] Request body JSON:', JSON.stringify(requestBody))
+    
+    try {
+      const response = await this.request('/challenges/confirm-participation-payment', {
+        method: 'POST',
+        body: JSON.stringify(requestBody),
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })
+      console.log('✅ [API SERVICE] Payment confirmation response:', response)
+      return response
+    } catch (error: any) {
+      console.error('❌ [API SERVICE] Payment confirmation failed:', error)
+      console.error('❌ [API SERVICE] Error details:', {
+        message: error.message,
+        status: error.status,
+        response: error.response
+      })
+      throw error
+    }
   }
 
   // Utility methods
