@@ -22,14 +22,16 @@ const PAYMENT_ADDRESS = process.env.PAYMENT_ADDRESS || '0x21bee69e692ceb4c02b66c
 async function verifyPayment(
   txId: string,
   reference: string,
-  retries = 8,
-  delay = 3000,
+  retries = 12,
+  delay = 5000,
 ): Promise<{ ok: boolean; data?: WorldApiTransactionResponse; pending?: boolean }> {
   console.log(`🔍 [VERIFY PAYMENT] Starting verification for transaction ${txId} with reference ${reference}`)
   
-  // CORRECTION: Ajouter le paramètre type=payment
-  const url = `https://developer.worldcoin.org/api/v2/minikit/transaction/${txId}` +
-              `?app_id=${process.env.WORLD_APP_ID}&type=payment`
+  // Aligner avec la documentation officielle
+  // https://developer.worldcoin.org/api/v2/minikit/transaction/<txId>?app_id=<APP_ID>
+  const url =
+    `https://developer.worldcoin.org/api/v2/minikit/transaction/${txId}` +
+    `?app_id=${process.env.WORLD_APP_ID}`
 
   console.log(`🌐 [VERIFY PAYMENT] URL constructed: ${url}`)
 
