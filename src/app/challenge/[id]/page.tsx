@@ -477,14 +477,15 @@ function ChallengePage() {
     joiningRef.current = true
     console.log('🔒 [HYPER RADICAL FIX] LOCKED!')
     
-    // Transformation du bouton (compatible avec div)
+    // Transformation du bouton
     if (buttonRef.current) {
       const btn = buttonRef.current
+      btn.disabled = true
       btn.style.backgroundColor = '#d1d5db'
       btn.style.color = '#9ca3af'
       btn.style.cursor = 'not-allowed'
       btn.style.pointerEvents = 'none'
-      btn.innerHTML = 'Joining...'
+      btn.textContent = 'Joining...'
       console.log('⚡ [HYPER RADICAL FIX] Button transformed!')
     }
     
@@ -500,11 +501,12 @@ function ChallengePage() {
         joiningRef.current = false
         if (buttonRef.current) {
           const btn = buttonRef.current
+          btn.disabled = false
           btn.style.backgroundColor = '#000000'
           btn.style.color = '#ffffff'
           btn.style.cursor = 'pointer'
           btn.style.pointerEvents = 'auto'
-          btn.innerHTML = 'Join Challenge'
+          btn.textContent = 'Join Challenge'
         }
         setIsJoining(false)
         return
@@ -516,7 +518,8 @@ function ChallengePage() {
     setIsNavigating(true)
     
     if (buttonRef.current) {
-      buttonRef.current.innerHTML = 'Starting Game...'
+      const btn = buttonRef.current
+      btn.textContent = 'Starting Game...'
     }
     
     // Navigation directe
@@ -782,7 +785,8 @@ function ChallengePage() {
                         </p>
                       </div>
                     )}
-                    <div
+                    <button
+                      type="button"
                       ref={buttonRef}
                       className="px-8 py-3 rounded-full text-sm font-medium bg-black text-white hover:bg-gray-900 cursor-pointer select-none text-center relative z-50"
                       style={{
@@ -793,33 +797,20 @@ function ChallengePage() {
                         touchAction: 'manipulation',
                         isolation: 'isolate'
                       }}
-                      onTouchStart={(e) => {
-                        e.preventDefault()
-                        e.stopPropagation()
-                        console.log('💥 HYPER RADICAL: touchStart - IMMEDIATE ACTION!')
-                        handleParticipate()
-                      }}
-                      onMouseDown={(e) => {
-                        e.preventDefault()
-                        e.stopPropagation()
-                        console.log('💥 HYPER RADICAL: mouseDown - IMMEDIATE ACTION!')
-                        handleParticipate()
-                      }}
                       onPointerDown={(e) => {
                         e.preventDefault()
                         e.stopPropagation()
-                        console.log('💥 HYPER RADICAL: pointerDown - IMMEDIATE ACTION!')
                         handleParticipate()
                       }}
                       onClick={(e) => {
                         e.preventDefault()
                         e.stopPropagation()
-                        console.log('💥 HYPER RADICAL: click - BACKUP ACTION!')
                         handleParticipate()
                       }}
+                      disabled={isJoining || isNavigating || showingPartial}
                     >
                       {isJoining ? 'Joining...' : isNavigating ? 'Starting...' : showingPartial ? 'Loading...' : 'Join Challenge'}
-                    </div>
+                    </button>
                   </div>
                 )}
 
