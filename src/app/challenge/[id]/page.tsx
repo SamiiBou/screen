@@ -213,8 +213,8 @@ function ChallengePage() {
   const params = useParams()
   const router = useRouter()
   const { user } = useAuth()
-  const { challenges } = useChallenges()
-  const initialChallenge = challenges[params.id as string] || null
+  const { challenges, updateChallenge, getChallenge } = useChallenges()
+  const initialChallenge = getChallenge(params.id as string)
   const [challenge, setChallenge] = useState<Challenge | null>(initialChallenge)
   const [loading, setLoading] = useState(!initialChallenge)
   const [participationStatus, setParticipationStatus] = useState<ParticipationStatus | null>(null)
@@ -227,7 +227,14 @@ function ChallengePage() {
 
   useEffect(() => {
     if (challengeId) {
-      loadChallengeData()
+      // Si on a déjà les données du challenge en cache, charger seulement le statut de participation
+      if (initialChallenge) {
+        console.log('🚀 [CHALLENGE DEBUG] Using cached challenge data for instant navigation')
+        setLoading(false)
+        loadParticipationStatus()
+      } else {
+        loadChallengeData()
+      }
     }
   }, [challengeId])
 
@@ -242,7 +249,7 @@ function ChallengePage() {
 
   const loadChallengeData = async () => {
     try {
-      if (!challenge) setLoading(true)
+      setLoading(true)
       setError(null)
       
       console.log('🔍 [CHALLENGE DEBUG] Loading challenge with ID:', challengeId)
@@ -254,31 +261,12 @@ function ChallengePage() {
       
       if (challengeResponse && challengeResponse.challenge) {
         setChallenge(challengeResponse.challenge)
+        // Mettre à jour le cache
+        updateChallenge(challengeResponse.challenge)
         console.log('💰 [CHALLENGE DEBUG] Challenge participation price:', challengeResponse.challenge.participationPrice)
         
-        // Vérifier si l'utilisateur peut participer
-        try {
-          console.log('🔍 [CHALLENGE DEBUG] Checking participation status...')
-          const participationResponse = await apiService.canParticipateInChallenge(challengeId)
-          console.log('📊 [CHALLENGE DEBUG] Participation response:', participationResponse)
-          console.log('💳 [CHALLENGE DEBUG] Participation status breakdown:', {
-            canParticipate: participationResponse.canParticipate,
-            needsPayment: participationResponse.needsPayment,
-            hasPendingPayment: participationResponse.hasPendingPayment,
-            hasPaid: participationResponse.hasPaid,
-            participationPrice: participationResponse.participationPrice
-          })
-          setParticipationStatus(participationResponse)
-        } catch (err) {
-          console.error('❌ [CHALLENGE DEBUG] Error checking participation:', err)
-          setParticipationStatus({
-            canParticipate: true,
-            needsPayment: false,
-            hasPendingPayment: false,
-            hasPaid: true,
-            participationPrice: 0
-          })
-        }
+        // Charger le statut de participation
+        await loadParticipationStatus()
       } else {
         setError('Challenge not found')
       }
@@ -287,6 +275,24 @@ function ChallengePage() {
       setError(`Failed to load challenge: ${error.message || 'Unknown error'}`)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const loadParticipationStatus = async () => {
+    try {
+      console.log('🔍 [CHALLENGE DEBUG] Checking participation status...')
+      const participationResponse = await apiService.canParticipateInChallenge(challengeId)
+      console.log('📊 [CHALLENGE DEBUG] Participation response:', participationResponse)
+      setParticipationStatus(participationResponse)
+    } catch (err) {
+      console.error('❌ [CHALLENGE DEBUG] Error checking participation:', err)
+      setParticipationStatus({
+        canParticipate: true,
+        needsPayment: false,
+        hasPendingPayment: false,
+        hasPaid: true,
+        participationPrice: 0
+      })
     }
   }
 
@@ -350,7 +356,7 @@ function ChallengePage() {
             type: "success" 
           })
           // Reload participation status
-          await loadChallengeData()
+          await loadParticipationStatus()
           console.log('💰 [CHALLENGE PAYMENT] ✅ Payment completed successfully!')
         } else {
           throw new Error('Payment confirmation failed')

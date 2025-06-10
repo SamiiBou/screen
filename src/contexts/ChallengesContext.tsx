@@ -5,6 +5,8 @@ import { Challenge } from '@/utils/api'
 interface ChallengesContextValue {
   challenges: Record<string, Challenge>
   setChallengesList: (list: Challenge[]) => void
+  updateChallenge: (challenge: Challenge) => void
+  getChallenge: (id: string) => Challenge | null
 }
 
 const ChallengesContext = createContext<ChallengesContextValue | undefined>(undefined)
@@ -20,8 +22,19 @@ export const ChallengesProvider = ({ children }: { children: ReactNode }) => {
     setChallenges(map)
   }
 
+  const updateChallenge = (challenge: Challenge) => {
+    setChallenges(prev => ({
+      ...prev,
+      [challenge._id]: challenge
+    }))
+  }
+
+  const getChallenge = (id: string): Challenge | null => {
+    return challenges[id] || null
+  }
+
   return (
-    <ChallengesContext.Provider value={{ challenges, setChallengesList }}>
+    <ChallengesContext.Provider value={{ challenges, setChallengesList, updateChallenge, getChallenge }}>
       {children}
     </ChallengesContext.Provider>
   )

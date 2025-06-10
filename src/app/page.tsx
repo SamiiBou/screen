@@ -5,6 +5,7 @@ import { motion } from 'motion/react'
 import { useRouter } from 'next/navigation'
 import { apiService } from '@/utils/api'
 import { useAuth } from '@/contexts/AuthContext'
+import { useChallenges } from '@/contexts/ChallengesContext'
 import { AceternityButton } from '@/components/ui/AceternityButton'
 import AuthGate from '@/components/AuthGate'
 import AddChallengeForm from '@/components/AddChallengeForm'
@@ -26,13 +27,17 @@ function HomePage() {
   const [activeChallenges, setActiveChallenges] = useState<Challenge[]>([])
   const [loading, setLoading] = useState(true)
   const { user, isAuthenticated } = useAuth()
+  const { setChallengesList } = useChallenges()
   const router = useRouter()
 
   useEffect(() => {
     const loadChallenges = async () => {
       try {
         const response = await apiService.getActiveChallenges()
-        setActiveChallenges(response.challenges || [])
+        const challenges = response.challenges || []
+        setActiveChallenges(challenges)
+        // Mettre à jour le cache des challenges
+        setChallengesList(challenges)
       } catch (error) {
         console.error('Error loading challenges:', error)
         setActiveChallenges([])
@@ -117,7 +122,10 @@ function HomePage() {
               setLoading(true)
               try {
                 const response = await apiService.getActiveChallenges()
-                setActiveChallenges(response.challenges || [])
+                const challenges = response.challenges || []
+                setActiveChallenges(challenges)
+                // Mettre à jour le cache des challenges
+                setChallengesList(challenges)
               } catch (error) {
                 setActiveChallenges([])
               } finally {
@@ -152,7 +160,10 @@ function HomePage() {
                   try {
                     await apiService.initDefaultChallenges()
                     const response = await apiService.getActiveChallenges()
-                    setActiveChallenges(response.challenges || [])
+                    const challenges = response.challenges || []
+                    setActiveChallenges(challenges)
+                    // Mettre à jour le cache des challenges
+                    setChallengesList(challenges)
                   } catch (error) {
                     console.error('Error creating challenges:', error)
                   }
@@ -174,12 +185,11 @@ function HomePage() {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.1 }}
-                  onClick={(e) => handleChallengeClick(challenge._id, e)}
-                  className="border border-gray-100 rounded-2xl p-6 cursor-pointer hover:border-gray-300 hover:bg-gray-50/50 transition-all duration-200 select-none"
+                  className="border border-gray-100 rounded-2xl p-6 hover:border-gray-300 hover:bg-gray-50/50 transition-all duration-200 select-none"
                   style={{ userSelect: 'none' }}
                 >
                   <div className="flex items-center justify-between">
-                    <div>
+                    <div className="flex-1 cursor-pointer" onClick={(e) => handleChallengeClick(challenge._id, e)}>
                       <h3 className="text-lg font-medium text-black mb-1">
                         {challenge.title}
                       </h3>
@@ -187,12 +197,22 @@ function HomePage() {
                         {challenge.currentParticipants}/{challenge.maxParticipants} PLAYERS
                       </p>
                     </div>
-                    <div className="text-right">
-                      <div className="text-right">
+                    <div className="text-right flex items-center space-x-4">
+                      <div>
                         <div className="text-sm font-medium text-black">1st: {challenge.firstPrize} WLD</div>
                         <div className="text-xs text-gray-600">2nd: {challenge.secondPrize} • 3rd: {challenge.thirdPrize}</div>
+                        <div className="w-2 h-2 bg-green-400 rounded-full mt-1 ml-auto"></div>
                       </div>
-                      <div className="w-2 h-2 bg-green-400 rounded-full mt-1 ml-auto"></div>
+                      <AceternityButton
+                        onClick={(e) => {
+                          e.preventDefault()
+                          e.stopPropagation()
+                          handleChallengeClick(challenge._id)
+                        }}
+                        className="bg-black text-white px-4 py-2 rounded-full text-sm font-medium hover:bg-gray-900 transition-all duration-200 border-none whitespace-nowrap"
+                      >
+                        Join Challenge
+                      </AceternityButton>
                     </div>
                   </div>
                 </motion.div>
