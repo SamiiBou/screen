@@ -1,4 +1,3 @@
-Notes
 import type { Metadata } from 'next'
 import './globals.css'
 import ErudaDebugger from '@/components/ErudaDebugger'
