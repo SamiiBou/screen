@@ -1,7 +1,10 @@
 import { ButtonHTMLAttributes, ReactNode } from 'react';
 import { motion } from 'framer-motion';
 
-interface AceternityButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'onDrag'> {
+interface AceternityButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 
+  'onDrag' | 'onDragEnd' | 'onDragStart' | 'onDragEnter' | 'onDragLeave' | 'onDragOver' | 'onDrop' |
+  'onAnimationStart' | 'onAnimationEnd' | 'onAnimationIteration'
+> {
   children: ReactNode;
   variant?: 'primary' | 'secondary';
 }
