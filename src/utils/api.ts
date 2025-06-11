@@ -18,7 +18,9 @@ export interface Challenge {
   endDate: string
   maxParticipants: number
   currentParticipants: number
-  prizePool: number
+  firstPrize: number
+  secondPrize: number
+  thirdPrize: number
   participationPrice: number
   status: 'upcoming' | 'active' | 'completed'
 }

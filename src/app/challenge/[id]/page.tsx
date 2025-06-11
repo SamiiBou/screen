@@ -1,27 +1,15 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { motion } from 'motion/react'
-import { apiService, LeaderboardEntry } from '@/utils/api'
+import { motion, AnimatePresence } from 'framer-motion'
+import { MiniKit, tokenToDecimals, Tokens, PayCommandInput } from '@worldcoin/minikit-js'
+import AceternityButton from '@/components/ui/ace-button'
 import { useAuth } from '@/contexts/AuthContext'
 import { useChallenges } from '@/contexts/ChallengesContext'
+import { Challenge, apiService } from '@/utils/api'
 import AuthGate from '@/components/AuthGate'
-import { AceternityButton } from '@/components/ui/AceternityButton'
-import { MiniKit, tokenToDecimals, Tokens, PayCommandInput } from '@worldcoin/minikit-js'
-
-interface Challenge {
-  _id: string
-  title: string
-  description: string
-  maxParticipants: number
-  currentParticipants: number
-  firstPrize: number
-  secondPrize: number
-  thirdPrize: number
-  participationPrice: number
-  status: 'upcoming' | 'active' | 'completed'
-}
+import { LeaderboardEntry } from '@/utils/api'
 
 interface ParticipationStatus {
   canParticipate: boolean
