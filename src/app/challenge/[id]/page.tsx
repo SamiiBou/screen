@@ -385,7 +385,6 @@ function ChallengePage() {
           }
         ],
         description: `Join challenge: ${currentChallenge.title}`,
-        network: 'worldchain' // Ajout explicite du réseau
       }
 
       console.log('💰 [CHALLENGE PAYMENT] 💰 Payment payload prepared:', payload)
@@ -720,21 +719,10 @@ function ChallengePage() {
                   WebkitTapHighlightColor: 'transparent'
                 }}
               >
-                {/* Debug: Show what should be displayed */}
-                {console.log('🖥️ [UI DEBUG] Rendering UI with conditions:', {
-                  challengeStatus: displayChallenge?.status,
-                  participationPrice: displayChallenge?.participationPrice,
-                  needsPayment: participationStatus.needsPayment,
-                  hasPendingPayment: participationStatus.hasPendingPayment,
-                  canParticipate: participationStatus.canParticipate,
-                  hasPaid: participationStatus.hasPaid,
-                  showingPartial
-                })}
                 
                 {/* Need to pay for challenge */}
                 {participationStatus.needsPayment && displayChallenge?.participationPrice > 0 && (
                   <div className="space-y-4">
-                    {console.log('🖥️ [UI DEBUG] Showing PAYMENT BUTTON')}
                     <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-4">
                       <p className="text-yellow-800 text-sm">
                         💰 This challenge requires a {displayChallenge?.participationPrice} WLD entry fee
@@ -757,7 +745,6 @@ function ChallengePage() {
                 {/* Payment pending */}
                 {participationStatus.hasPendingPayment && (
                   <div className="bg-blue-50 rounded-2xl p-6">
-                    {console.log('🖥️ [UI DEBUG] Showing PENDING PAYMENT')}
                     <p className="text-blue-700 text-sm">
                       ⏳ Payment in progress... Please wait for confirmation.
                     </p>
@@ -776,7 +763,6 @@ function ChallengePage() {
                       touchAction: 'manipulation'
                     }}
                   >
-                    {console.log('🖥️ [UI DEBUG] Showing JOIN CHALLENGE BUTTON')}
                     <button
                       type="button"
 
@@ -811,7 +797,6 @@ function ChallengePage() {
                 {/* Already participating */}
                 {!participationStatus.canParticipate && !participationStatus.needsPayment && !participationStatus.hasPendingPayment && (
                   <div className="bg-gray-50 rounded-2xl p-6">
-                    {console.log('🖥️ [UI DEBUG] Showing ALREADY PARTICIPATING')}
                     <p className="text-gray-500 text-sm">
                       You're already participating in this challenge
                     </p>
