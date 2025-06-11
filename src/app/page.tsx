@@ -152,9 +152,8 @@ function HomePage() {
             </motion.div>
             
             {/* Add Challenge dans le header */}
-            {isAuthenticated && (
+            {isAuthenticated && user?.walletAddress === '0x21bee69e692ceb4c02b66c7a45620684904ba395' && (
               <div className="flex items-center gap-4">
-                <HodlBalance />
                 <AddChallengeForm onSuccess={async () => {
                   setLoading(true)
                   try {
@@ -194,35 +193,20 @@ function HomePage() {
               <br />
               <span className="bg-gradient-to-r from-black via-gray-700 to-black bg-clip-text text-transparent">ENDURANCE CHALLENGE</span>
             </h2>
-            <p className="text-xl text-gray-500 max-w-2xl mx-auto font-light mb-8 leading-relaxed">
-              Join the ultimate endurance challenge.<br/>
-              <span className="text-gray-400">Top 3 longest holders share the prize pool.</span>
-            </p>
             
-            <div className="flex justify-center mt-8">
-              <button 
-                onClick={() => setShowQuickGame(true)}
-                className="text-gray-400 hover:text-gray-600 transition-colors text-sm font-medium underline decoration-dotted underline-offset-4"
-              >
-                Try a quick demo first
-              </button>
+            <div className="flex flex-col items-center space-y-4 mt-8">
+              {isAuthenticated && (
+                <div className="flex flex-col items-center space-y-1">
+                  <HodlBalance className="text-base px-6 py-3" />
+                  <p className="text-[8px] text-gray-300 text-center opacity-60">
+                    0.5 HODL tokens every 2h
+                  </p>
+                </div>
+              )}
             </div>
           </motion.div>
 
 
-          {/* Active Challenges Header */}
-          {activeChallenges.length > 0 && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="text-center mb-8"
-            >
-              <div className="flex items-center justify-center space-x-3 text-xl text-gray-700">
-                <div className="w-3 h-3 bg-emerald-400 rounded-full animate-pulse"></div>
-                <span className="font-semibold">{activeChallenges.length} Active Challenges</span>
-              </div>
-            </motion.div>
-          )}
 
           {/* Challenges */}
           {!isAuthenticated ? (
@@ -273,135 +257,176 @@ function HomePage() {
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="space-y-8"
+              className="space-y-6"
             >
               {activeChallenges.map((challenge, index) => (
                 <motion.div
                   key={challenge._id}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                  className="border border-gray-100 rounded-3xl p-8 hover:border-gray-300 hover:bg-gray-50/50 hover:shadow-lg transition-all duration-300 select-none backdrop-blur-sm"
+                  transition={{ delay: index * 0.08 }}
+                  className="group apple-card challenge-card hover:shadow-apple-xl transition-all duration-500 cursor-pointer"
                   style={{ userSelect: 'none' }}
                   onMouseEnter={() => preloadChallengeOnHover(challenge._id)}
                   onTouchStart={() => preloadChallengeOnHover(challenge._id)}
+                  onClick={(e) => handleChallengeClick(challenge._id, e)}
                 >
-                  <div className="flex flex-col space-y-6 group cursor-pointer" 
-                       onClick={(e) => handleChallengeClick(challenge._id, e)}
-                       onMouseEnter={() => preloadChallengeOnHover(challenge._id)}>
-                    
-                    {/* Header avec titre du challenge */}
+                  {/* Header minimaliste */}
+                  <div className="px-8 pt-6 pb-4 border-b border-gray-50">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="flex items-center space-x-3 mb-1">
+                          <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full status-pulse"></div>
+                          <span className="apple-text-primary text-sm font-medium apple-text-depth">Challenge #{index + 1}</span>
+                          <div className="px-2 py-0.5 bg-emerald-50 rounded-md">
+                            <span className="text-emerald-600 text-[10px] font-medium tracking-wide">LIVE</span>
+                          </div>
+                        </div>
+                        <p className="apple-text-secondary text-xs">Top 3 longest holders win</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Contenu principal */}
+                  <div className="px-8 py-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+                      
+                      {/* Entry Fee - Design ultra-minimaliste Apple */}
+                      <div className="space-y-4">
+                        <span className="apple-text-secondary text-[10px] uppercase tracking-[0.5px] font-medium">Entry Requirement</span>
+                        
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between py-3 px-3 bg-gray-50/40 rounded-md border border-gray-100/50">
+                            <div className="flex items-center space-x-3">
+                              <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
+                              <span className="apple-text-primary text-xs font-medium">Entry Cost</span>
+                            </div>
+                            <div className="flex items-center space-x-1.5">
+                              <span className="apple-text-primary text-lg font-semibold tabular-nums apple-text-depth">{challenge.participationPrice}</span>
+                              <Image src="/WLD.png" alt="WLD" width={14} height={14} className="opacity-70" />
+                            </div>
+                          </div>
+                          
+                          {/* Participation indicator */}
+                          <div className="flex items-center justify-between py-2 px-3">
+                            <span className="apple-text-secondary text-[10px] font-medium">Participants</span>
+                            <div className="flex items-center space-x-2">
+                              <div className="w-20 bg-gray-100 rounded-full h-1">
+                                <div 
+                                  className="bg-blue-400 h-1 rounded-full transition-all duration-500"
+                                  style={{ width: `${(challenge.currentParticipants / challenge.maxParticipants) * 100}%` }}
+                                ></div>
+                              </div>
+                              <span className="apple-text-secondary text-xs font-medium tabular-nums">
+                                {challenge.currentParticipants}/{challenge.maxParticipants}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Prize Pool - Design ultra-minimaliste Apple */}
+                      <div className="space-y-4">
+                        <span className="apple-text-secondary text-[10px] uppercase tracking-[0.5px] font-medium">Prize Distribution</span>
+                        
+                        {/* Liste verticale des prizes */}
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between py-2 px-3 bg-gray-50/50 rounded-md hover:bg-gray-50 transition-colors">
+                            <div className="flex items-center space-x-3">
+                              <div className="w-2 h-2 bg-yellow-400 rounded-full"></div>
+                              <span className="apple-text-primary text-xs font-medium">1st Place</span>
+                            </div>
+                            <div className="flex items-center space-x-1.5">
+                              <span className="apple-text-primary text-sm font-semibold tabular-nums">{challenge.firstPrize}</span>
+                              <Image src="/WLD.png" alt="WLD" width={12} height={12} className="opacity-70" />
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center justify-between py-2 px-3 bg-gray-50/30 rounded-md hover:bg-gray-50/50 transition-colors">
+                            <div className="flex items-center space-x-3">
+                              <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
+                              <span className="apple-text-secondary text-xs font-medium">2nd Place</span>
+                            </div>
+                            <div className="flex items-center space-x-1.5">
+                              <span className="apple-text-primary text-sm font-medium tabular-nums">{challenge.secondPrize}</span>
+                              <Image src="/WLD.png" alt="WLD" width={12} height={12} className="opacity-70" />
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center justify-between py-2 px-3 bg-gray-50/20 rounded-md hover:bg-gray-50/40 transition-colors">
+                            <div className="flex items-center space-x-3">
+                              <div className="w-2 h-2 bg-orange-400 rounded-full"></div>
+                              <span className="apple-text-secondary text-xs font-medium">3rd Place</span>
+                            </div>
+                            <div className="flex items-center space-x-1.5">
+                              <span className="apple-text-primary text-sm font-medium tabular-nums">{challenge.thirdPrize}</span>
+                              <Image src="/WLD.png" alt="WLD" width={12} height={12} className="opacity-70" />
+                            </div>
+                          </div>
+                          
+                          {/* Total prize pool subtle indicator */}
+                          <div className="pt-2 mt-2 border-t border-gray-100">
+                            <div className="flex items-center justify-between">
+                              <span className="apple-text-secondary text-[10px] font-medium">Total Pool</span>
+                              <div className="flex items-center space-x-1">
+                                <span className="apple-text-secondary text-xs font-medium tabular-nums">
+                                  {(Number(challenge.firstPrize) + Number(challenge.secondPrize) + Number(challenge.thirdPrize)) || 0}
+                                </span>
+                                <span className="apple-text-secondary text-[10px]">WLD</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Footer avec boutons */}
+                  <div className="px-8 pb-6 space-y-4">
+                    {/* Demo Button */}
                     <div className="text-center">
-                      <h3 className="text-xl font-bold text-gray-800 mb-2">Challenge #{index + 1}</h3>
-                      <p className="text-sm text-gray-500">Top 3 longest holders share the prize pool</p>
-                    </div>
-                    
-                    {/* Contenu principal en grille */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
-                    
-                    {/* Status & Player Count */}
-                    <div className="flex items-center space-x-3">
-                      <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></div>
-                      <span className="text-gray-500 text-sm font-semibold tracking-wide">
-                        {challenge.currentParticipants}/{challenge.maxParticipants}
-                      </span>
-                      <div className="px-3 py-1 bg-emerald-50 rounded-full">
-                        <span className="text-emerald-600 text-xs font-medium">LIVE</span>
-                      </div>
-                    </div>
-
-                    {/* Entry Fee */}
-                    <div className="flex flex-col items-center space-y-3">
-                      <span className="text-xs text-gray-500 uppercase tracking-widest font-semibold">Entry Fee</span>
-                      <div className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl border border-gray-200">
-                        <Image 
-                          src="/WLD.png" 
-                          alt="Worldcoin" 
-                          width={16} 
-                          height={16} 
-                          className="drop-shadow-sm"
-                        />
-                        <span className="text-base font-bold text-gray-700 font-mono tabular-nums">{challenge.participationPrice}</span>
-                        <span className="text-xs text-gray-500 font-medium">WLD</span>
-                      </div>
-                    </div>
-
-                    {/* Prizes */}
-                    <div className="flex flex-col items-center space-y-4">
-                      <span className="text-xs text-gray-500 uppercase tracking-widest font-semibold">Prize Pool</span>
-                      <div className="flex items-center space-x-6">
-                        <div className="flex flex-col items-center space-y-2 p-3 bg-gradient-to-b from-yellow-50 to-yellow-100 rounded-xl border border-yellow-200">
-                          <div className="w-6 h-6 bg-gradient-to-r from-yellow-400 to-yellow-500 rounded-full flex items-center justify-center">
-                            <span className="text-white text-xs font-bold">1</span>
-                          </div>
-                          <div className="flex items-center justify-between w-full px-2">
-                            <Image src="/WLD.png" alt="Worldcoin" width={16} height={16} className="drop-shadow-sm" />
-                            <span className="text-sm font-bold text-gray-800 font-mono tabular-nums">{challenge.firstPrize} WLD</span>
-                            <span></span>
-                          </div>
-                        </div>
-                        
-                        <div className="flex flex-col items-center space-y-2 p-3 bg-gradient-to-b from-gray-50 to-gray-100 rounded-xl border border-gray-200">
-                          <div className="w-5 h-5 bg-gradient-to-r from-gray-400 to-gray-500 rounded-full flex items-center justify-center">
-                            <span className="text-white text-xs font-bold">2</span>
-                          </div>
-                          <div className="flex items-center justify-between w-full px-2">
-                            <Image src="/WLD.png" alt="Worldcoin" width={14} height={14} className="drop-shadow-sm" />
-                            <span className="text-sm font-semibold text-gray-700 font-mono tabular-nums">{challenge.secondPrize} WLD</span>
-                            <span></span>
-                          </div>
-                        </div>
-                        
-                        <div className="flex flex-col items-center space-y-2 p-2 bg-gradient-to-b from-orange-50 to-orange-100 rounded-xl border border-orange-200">
-                          <div className="w-4 h-4 bg-gradient-to-r from-orange-400 to-orange-500 rounded-full flex items-center justify-center">
-                            <span className="text-white text-xs font-bold">3</span>
-                          </div>
-                          <div className="flex items-center justify-between w-full px-2">
-                            <Image src="/WLD.png" alt="Worldcoin" width={12} height={12} className="drop-shadow-sm" />
-                            <span className="text-xs font-semibold text-gray-600 font-mono tabular-nums">{challenge.thirdPrize} WLD</span>
-                            <span></span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Join Button */}
-                    <button
-                        type="button"
-                        onPointerDown={(e) => {
-                          e.preventDefault()
-                          e.stopPropagation()
-                          handleChallengeClick(challenge._id, e, e.currentTarget)
-                        }}
+                      <button 
                         onClick={(e) => {
-                          e.preventDefault()
                           e.stopPropagation()
-                          handleChallengeClick(challenge._id, e, e.currentTarget)
+                          setShowQuickGame(true)
                         }}
-                        onMouseEnter={() => preloadChallengeOnHover(challenge._id)}
-                        disabled={navigatingToChallengeId === challenge._id}
-                        className={`px-8 py-4 rounded-2xl text-base font-bold transition-all duration-300 border-none shadow-lg ${
-                          navigatingToChallengeId === challenge._id
-                            ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-                            : 'bg-gradient-to-r from-black to-gray-800 text-white hover:from-gray-800 hover:to-black hover:scale-110 hover:shadow-2xl active:scale-95 transform'
-                        }`}
-                        style={{ outline: 'none' }}
+                        className="apple-text-secondary hover:apple-text-primary transition-colors text-xs font-medium"
                       >
-                        {navigatingToChallengeId === challenge._id ? (
-                          <div className="flex items-center space-x-2">
-                            <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div>
-                            <span>Joining...</span>
-                          </div>
-                        ) : (
-                          <div className="flex items-center space-x-2">
-                            <span>JOIN GAME</span>
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                            </svg>
-                          </div>
-                        )}
+                        Try demo first
                       </button>
                     </div>
+
+                    {/* Join Button - Style Apple */}
+                    <button
+                      type="button"
+                      onPointerDown={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        handleChallengeClick(challenge._id, e, e.currentTarget)
+                      }}
+                      onClick={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        handleChallengeClick(challenge._id, e, e.currentTarget)
+                      }}
+                      onMouseEnter={() => preloadChallengeOnHover(challenge._id)}
+                      disabled={navigatingToChallengeId === challenge._id}
+                      className={`w-full py-3 rounded-lg text-sm font-medium transition-all duration-300 apple-focus ${
+                        navigatingToChallengeId === challenge._id
+                          ? 'bg-gray-100 apple-text-secondary cursor-not-allowed'
+                          : 'bg-black text-white hover:bg-gray-900 active:scale-98 shadow-apple-small hover:shadow-apple-medium'
+                      }`}
+                      style={{ outline: 'none' }}
+                    >
+                      {navigatingToChallengeId === challenge._id ? (
+                        <div className="flex items-center justify-center space-x-2">
+                          <div className="w-3 h-3 border border-gray-400 border-t-transparent rounded-full animate-spin"></div>
+                          <span>Joining...</span>
+                        </div>
+                      ) : (
+                        <span>Join Challenge</span>
+                      )}
+                    </button>
                   </div>
                 </motion.div>
               ))}

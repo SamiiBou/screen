@@ -290,6 +290,49 @@ class ApiService {
     })
   }
 
+  // Human Verification Methods (World ID)
+  async verifyWorldID(proofData: any) {
+    console.log('🔍 [API] Verifying World ID proof with backend:', proofData)
+    try {
+      const response = await this.request('/auth/worldcoin-verify', {
+        method: 'POST',
+        body: JSON.stringify(proofData)
+      })
+      console.log('✅ [API] World ID verification response:', response)
+      return response
+    } catch (error) {
+      console.error('❌ [API] World ID verification failed:', error)
+      throw error
+    }
+  }
+
+  async updateHumanVerification(data: any) {
+    console.log('🔄 [API] Updating human verification status:', data)
+    try {
+      const response = await this.request('/auth/update-human-verification', {
+        method: 'POST',
+        body: JSON.stringify(data)
+      })
+      console.log('✅ [API] Human verification updated:', response)
+      return response
+    } catch (error) {
+      console.error('❌ [API] Human verification update failed:', error)
+      throw error
+    }
+  }
+
+  async getHumanVerificationStatus() {
+    console.log('📊 [API] Getting human verification status')
+    try {
+      const response = await this.request('/auth/human-verification-status')
+      console.log('✅ [API] Human verification status:', response)
+      return response
+    } catch (error) {
+      console.error('❌ [API] Failed to get human verification status:', error)
+      throw error
+    }
+  }
+
   // Utility methods
   logout() {
     this.setToken(null)

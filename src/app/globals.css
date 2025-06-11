@@ -152,7 +152,7 @@ body {
   
   .apple-card:hover {
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08) !important;
-    transform: translateY(-2px) !important;
+    transform: translateY(-1px) !important;
   }
   
   @media (prefers-color-scheme: dark) {
@@ -266,4 +266,66 @@ body {
   margin-top: 5px !important;
   position: relative;
   top: 0.5rem !important;
+}
+
+/* Apple Challenge Card Styles */
+.challenge-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.challenge-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  transition: left 0.5s;
+}
+
+.challenge-card:hover::before {
+  left: 100%;
+}
+
+/* Scale animation for active states */
+.active\:scale-98:active {
+  transform: scale(0.98) !important;
+}
+
+/* Prize card subtle animations */
+.prize-card {
+  transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
+}
+
+.prize-card:hover {
+  transform: scale(1.02) !important;
+}
+
+/* Status indicator pulse */
+.status-pulse {
+  animation: status-pulse 2s infinite ease-in-out;
+}
+
+@keyframes status-pulse {
+  0%, 100% { 
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% { 
+    opacity: 0.7;
+    transform: scale(1.1);
+  }
+}
+
+/* Apple-style focus states */
+.apple-focus:focus {
+  outline: 2px solid var(--apple-blue) !important;
+  outline-offset: 2px !important;
+}
+
+/* Subtle text shadow for Apple-like depth */
+.apple-text-depth {
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
 }

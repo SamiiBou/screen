@@ -1,112 +1,248 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { motion } from 'motion/react'
-import { BackgroundBeamsWithCollision } from '@/components/ui/background-beams-with-collision'
-import { IconArrowLeft, IconUserPlus } from '@tabler/icons-react'
+import { useState } from 'react'
+import { motion, AnimatePresence } from 'motion/react'
+import Image from 'next/image'
 import { AceternityButton } from '@/components/ui/AceternityButton'
+import { useAuth } from '@/contexts/AuthContext'
 import WalletAuth from '@/components/WalletAuth'
 
 export default function AuthPage() {
   const router = useRouter()
+  const { login } = useAuth()
+  const [isConnecting, setIsConnecting] = useState(false)
+  const [showLoadingScreen, setShowLoadingScreen] = useState(false)
 
   const handleAuthSuccess = (userData: any) => {
-    console.log('🎉 Authentication successful, redirecting to mode selection')
-    router.push('/mode-selection')
+    console.log('🎉 Authentication successful, updating context and showing loading screen')
+    setIsConnecting(false)
+    setShowLoadingScreen(true)
+    
+    // Update the auth context with user data
+    login(userData)
+    
+    // Show loading screen for 2.5 seconds then redirect to home
+    setTimeout(() => {
+      router.push('/')
+    }, 2500)
   }
 
   const handleAuthError = (error: any) => {
     console.error('❌ Authentication error:', error)
-    // Error is handled by WalletAuth component
+    setIsConnecting(false)
   }
 
-  return (
-    <div className="min-h-screen relative scrollable-container">
-      <BackgroundBeamsWithCollision className="min-h-screen">
-        <div className="relative z-10 flex items-center justify-center min-h-screen p-6">
-          <motion.div
-            initial={{ opacity: 0, y: 40, scale: 0.9 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{ duration: 0.8, ease: "easeOut" }}
-            className="apple-blur rounded-3xl p-8 w-full max-w-md relative overflow-hidden"
+  const handleConnectStart = () => {
+    setIsConnecting(true)
+  }
+
+  // Pure White Loading Screen
+  const LoadingScreen = () => (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 bg-white z-50 flex items-center justify-center"
+    >
+      <div className="text-center">
+        <motion.div
+          initial={{ scale: 0.9, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ duration: 0.6, ease: "easeOut" }}
+          className="mb-8"
+        >
+          <Image 
+            src="/HODL_LOGO.png" 
+            alt="HODL Logo" 
+            width={200} 
+            height={60} 
+            className="h-16 w-auto mx-auto"
+          />
+        </motion.div>
+        
+        <motion.div
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.3, duration: 0.6 }}
+          className="space-y-6"
+        >
+          <div className="flex items-center justify-center space-x-1">
+            {[0, 1, 2].map((i) => (
+              <motion.div
+                key={i}
+                className="w-2 h-2 bg-black rounded-full"
+                animate={{
+                  scale: [1, 1.2, 1],
+                  opacity: [0.3, 1, 0.3]
+                }}
+                transition={{
+                  duration: 1.5,
+                  repeat: Infinity,
+                  delay: i * 0.2,
+                  ease: "easeInOut"
+                }}
+              />
+            ))}
+          </div>
+          
+          <motion.p
+            className="text-gray-600 text-base font-light"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.6 }}
           >
-            {/* Header */}
-            <motion.div 
-              className="text-center mb-8"
+            Setting up your experience...
+          </motion.p>
+        </motion.div>
+      </div>
+    </motion.div>
+  )
+
+  return (
+    <>
+      <div className="min-h-screen bg-white">
+        {/* Main Content */}
+        <div className="min-h-screen flex items-center justify-center p-6">
+          <div className="w-full max-w-md">
+            
+            {/* HODL Logo Section */}
+            <motion.div
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
+              transition={{ duration: 0.8, ease: "easeOut" }}
+              className="text-center mb-16"
             >
               <motion.div
-                className="w-20 h-20 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-6"
-                whileHover={{ rotate: 5, scale: 1.05 }}
-                transition={{ type: "spring", stiffness: 400, damping: 10 }}
+                whileHover={{ scale: 1.02 }}
+                transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                className="inline-block mb-8"
               >
-                <IconUserPlus className="w-10 h-10 text-white" />
+                <Image 
+                  src="/HODL_LOGO.png" 
+                  alt="HODL Logo" 
+                  width={600} 
+                  height={180} 
+                  className="h-40 w-auto mx-auto"
+                />
               </motion.div>
               
-              <motion.h1 
+              <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3 }}
-                className="text-3xl font-bold text-white mb-2"
+                transition={{ delay: 0.3, duration: 0.6 }}
+                className="space-y-3"
               >
-                Welcome to Button Game!
-              </motion.h1>
+                <h1 className="text-3xl font-light text-black tracking-tight">
+                  Enter the Game
+                </h1>
+                <p className="text-gray-500 text-base font-light">
+                  Connect your wallet to continue
+                </p>
+              </motion.div>
+            </motion.div>
+
+            {/* Pure White Auth Card */}
+            <motion.div
+              initial={{ opacity: 0, y: 40, scale: 0.96 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
+              className="bg-white border border-gray-100 rounded-3xl p-8 shadow-lg shadow-black/5"
+            >
               
-              <motion.p 
-                className="text-gray-300"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.6, delay: 0.4 }}
-              >
-                Connect your World wallet to start playing
-              </motion.p>
+              {/* Connection Status */}
+              <AnimatePresence mode="wait">
+                {isConnecting ? (
+                  <motion.div
+                    key="connecting"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    className="text-center py-8"
+                  >
+                    <div className="flex items-center justify-center space-x-2 mb-4">
+                      <motion.div
+                        className="w-2 h-2 bg-black rounded-full"
+                        animate={{
+                          scale: [1, 1.2, 1],
+                          opacity: [0.3, 1, 0.3]
+                        }}
+                        transition={{
+                          duration: 1.5,
+                          repeat: Infinity,
+                          ease: "easeInOut"
+                        }}
+                      />
+                      <motion.div
+                        className="w-2 h-2 bg-black rounded-full"
+                        animate={{
+                          scale: [1, 1.2, 1],
+                          opacity: [0.3, 1, 0.3]
+                        }}
+                        transition={{
+                          duration: 1.5,
+                          repeat: Infinity,
+                          delay: 0.2,
+                          ease: "easeInOut"
+                        }}
+                      />
+                      <motion.div
+                        className="w-2 h-2 bg-black rounded-full"
+                        animate={{
+                          scale: [1, 1.2, 1],
+                          opacity: [0.3, 1, 0.3]
+                        }}
+                        transition={{
+                          duration: 1.5,
+                          repeat: Infinity,
+                          delay: 0.4,
+                          ease: "easeInOut"
+                        }}
+                      />
+                    </div>
+                    <p className="text-gray-600 text-sm font-light">
+                      Connecting to your wallet...
+                    </p>
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    key="auth-form"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    className="space-y-6"
+                  >
+                    <WalletAuth 
+                      onAuthSuccess={handleAuthSuccess}
+                      onAuthError={handleAuthError}
+                      onConnectStart={handleConnectStart}
+                    />
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </motion.div>
 
-            {/* Wallet Auth Component */}
-            <motion.div 
-              className="space-y-5"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.6, delay: 0.3 }}
-            >
-              <WalletAuth 
-                onAuthSuccess={handleAuthSuccess}
-                onAuthError={handleAuthError}
-              />
-            </motion.div>
 
-            {/* Back Button */}
-            <motion.div 
-              className="mt-6 text-center"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.6, delay: 0.7 }}
-            >
-              <AceternityButton
-                onClick={() => router.push('/')}
-                className="inline-flex items-center gap-2 text-gray-400 hover:text-white transition-colors duration-200 text-sm group bg-transparent border-none shadow-none mt-6"
-              >
-                <IconArrowLeft className="w-4 h-4 group-hover:text-blue-400 transition-colors" />
-                Back to home
-              </AceternityButton>
-            </motion.div>
-
-            {/* Info */}
+            {/* Footer */}
             <motion.div 
               className="mt-8 text-center"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.6, delay: 0.8 }}
             >
-              <p className="text-xs text-gray-500">
-                Powered by Worldcoin MiniKit
+              <p className="text-xs text-gray-400 font-light">
+                Secured by World ID • Privacy by design
               </p>
             </motion.div>
-          </motion.div>
+
+          </div>
         </div>
-      </BackgroundBeamsWithCollision>
-    </div>
+      </div>
+
+      {/* Loading Screen Overlay */}
+      <AnimatePresence>
+        {showLoadingScreen && <LoadingScreen />}
+      </AnimatePresence>
+    </>
   )
 }

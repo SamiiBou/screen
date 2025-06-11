@@ -4,6 +4,7 @@ import ErudaDebugger from '@/components/ErudaDebugger'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { ChallengesProvider } from '@/contexts/ChallengesContext'
 import { MiniKitProvider } from '@worldcoin/minikit-js/minikit-provider'
+import { HumanVerificationProvider } from '@/components/HumanVerificationProvider'
 
 export const metadata: Metadata = {
   title: 'Button Endurance Game - Le Dernier Survivant',
@@ -26,7 +27,12 @@ export default function RootLayout({
         <MiniKitProvider>
           <AuthProvider>
             <ChallengesProvider>
-              {children}
+              <HumanVerificationProvider
+                autoShowModal={true}
+                delayMs={2000}
+              >
+                {children}
+              </HumanVerificationProvider>
             </ChallengesProvider>
           </AuthProvider>
         </MiniKitProvider>
