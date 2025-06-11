@@ -204,8 +204,25 @@ function ChallengePage() {
   const { challenges, updateChallenge, getChallenge, getChallengeImmediate, getChallengeWithFallback, preloadChallenge } = useChallenges()
   
   // MÉTHODE RADICALE: chargement immédiat avec données partielles
-  const challengeId = params.id as string
-  const immediateChallenge = getChallengeImmediate(challengeId)
+  const challengeId = params?.id as string
+  const immediateChallenge = challengeId ? getChallengeImmediate(challengeId) : null
+
+  // Early return if no challengeId
+  if (!challengeId) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto p-8">
+          <div className="text-black text-2xl font-semibold mb-6">Invalid Challenge</div>
+          <AceternityButton 
+            onClick={() => router.push('/')}
+            className="bg-black text-white px-6 py-3 rounded-full hover:bg-gray-800 transition-colors"
+          >
+            Back Home
+          </AceternityButton>
+        </div>
+      </div>
+    )
+  }
   
   const [challenge, setChallenge] = useState<Challenge | null>(
     immediateChallenge && !('isPartial' in immediateChallenge) ? immediateChallenge : null
