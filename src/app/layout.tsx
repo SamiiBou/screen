@@ -5,11 +5,17 @@ import { AuthProvider } from '@/contexts/AuthContext'
 import { ChallengesProvider } from '@/contexts/ChallengesContext'
 import { MiniKitProvider } from '@worldcoin/minikit-js/minikit-provider'
 import { HumanVerificationProvider } from '@/components/HumanVerificationProvider'
-import Head from 'next/head'
 
 export const metadata: Metadata = {
   title: 'Button Endurance Game - Le Dernier Survivant',
   description: 'Le dernier à garder son doigt sur le bouton gagne. Testez votre endurance et relevez les défis !',
+  icons: {
+    icon: '/favicon.ico',
+  },
+  other: {
+    'preconnect-googleapis': '<link rel="preconnect" href="https://fonts.googleapis.com" />',
+    'preconnect-gstatic': '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />',
+  },
 }
 
 export default function RootLayout({
@@ -18,26 +24,20 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <>
-      <Head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-      </Head>
-      <body className="font-sf-pro antialiased">
-        <ErudaDebugger />
-        <MiniKitProvider>
-          <AuthProvider>
-            <ChallengesProvider>
-              <HumanVerificationProvider
-                autoShowModal={true}
-                delayMs={2000}
-              >
-                {children}
-              </HumanVerificationProvider>
-            </ChallengesProvider>
-          </AuthProvider>
-        </MiniKitProvider>
-      </body>
-    </>
+    <body className="font-sf-pro antialiased">
+      <ErudaDebugger />
+      <MiniKitProvider>
+        <AuthProvider>
+          <ChallengesProvider>
+            <HumanVerificationProvider
+              autoShowModal={true}
+              delayMs={2000}
+            >
+              {children}
+            </HumanVerificationProvider>
+          </ChallengesProvider>
+        </AuthProvider>
+      </MiniKitProvider>
+    </body>
   )
 }
