@@ -1,3 +1,4 @@
+Notes
 import type { Metadata } from 'next'
 import './globals.css'
 import ErudaDebugger from '@/components/ErudaDebugger'
@@ -5,6 +6,7 @@ import { AuthProvider } from '@/contexts/AuthContext'
 import { ChallengesProvider } from '@/contexts/ChallengesContext'
 import { MiniKitProvider } from '@worldcoin/minikit-js/minikit-provider'
 import { HumanVerificationProvider } from '@/components/HumanVerificationProvider'
+import Head from 'next/head'
 
 export const metadata: Metadata = {
   title: 'Button Endurance Game - Le Dernier Survivant',
@@ -17,11 +19,11 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="fr" className="scroll-smooth">
-      <head>
+    <>
+      <Head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-      </head>
+      </Head>
       <body className="font-sf-pro antialiased">
         <ErudaDebugger />
         <MiniKitProvider>
@@ -37,6 +39,6 @@ export default function RootLayout({
           </AuthProvider>
         </MiniKitProvider>
       </body>
-    </html>
+    </>
   )
 }

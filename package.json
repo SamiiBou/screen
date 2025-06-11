@@ -8,6 +8,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "type-check": "tsc --noEmit",
     "hodl:add-all": "node server/scripts/add-hodl-tokens-to-all-users.js add",
     "hodl:reset-all": "node server/scripts/add-hodl-tokens-to-all-users.js reset",
     "hodl:stats": "node server/scripts/hodl-stats.js",
