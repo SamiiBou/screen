@@ -24,20 +24,22 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <body className="font-sf-pro antialiased">
-      <ErudaDebugger />
-      <MiniKitProvider>
-        <AuthProvider>
-          <ChallengesProvider>
-            <HumanVerificationProvider
-              autoShowModal={true}
-              delayMs={2000}
-            >
-              {children}
-            </HumanVerificationProvider>
-          </ChallengesProvider>
-        </AuthProvider>
-      </MiniKitProvider>
-    </body>
+    <html lang="en">
+      <body className="font-sf-pro antialiased">
+        <ErudaDebugger />
+        <MiniKitProvider>
+          <AuthProvider>
+            <ChallengesProvider>
+              <HumanVerificationProvider
+                autoShowModal={true}
+                delayMs={2000}
+              >
+                {children}
+              </HumanVerificationProvider>
+            </ChallengesProvider>
+          </AuthProvider>
+        </MiniKitProvider>
+      </body>
+    </html>
   )
 }
