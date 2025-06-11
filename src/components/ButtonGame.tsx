@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import { apiService } from '@/utils/api'
 import { AceternityButton } from './ui/AceternityButton'
+import { audioManager } from '@/utils/audioManager'
 
 interface ButtonGameProps {
   challengeId?: string
@@ -21,6 +22,7 @@ export default function ButtonGame({ challengeId }: ButtonGameProps) {
   const [challenge, setChallenge] = useState<any>(null)
   const [hasPlayed, setHasPlayed] = useState(false)
   const [canPlay, setCanPlay] = useState(true)
+  const [audioPlaying, setAudioPlaying] = useState(false)
   
   // Position du bouton
   const [pos, setPos] = useState({ x: 50, y: 50 })
@@ -37,6 +39,7 @@ export default function ButtonGame({ challengeId }: ButtonGameProps) {
   const gameRef = useRef<HTMLDivElement>(null)
   const phaseRef = useRef<'start' | 'game' | 'over'>('start')
   const gameStartTime = useRef<number>(0)
+  const hasSubmittedRef = useRef<boolean>(false)
   
   const { user } = useAuth()
   const router = useRouter()
@@ -152,11 +155,76 @@ export default function ButtonGame({ challengeId }: ButtonGameProps) {
   // Cleanup
   useEffect(() => {
     return () => {
+      // 🎵 Arrêter la musique lors du démontage du composant
+      audioManager.stop()
+      setAudioPlaying(false)
+      
       if (mainTimer.current) clearInterval(mainTimer.current)
       if (moveTimer.current) clearTimeout(moveTimer.current)
       if (waitTimer.current) clearInterval(waitTimer.current)
     }
   }, [])
+
+  /*
+   * -----------------------------------------------------
+   *  🔒  Ensure we record the game if the user leaves   🔒
+   * -----------------------------------------------------
+   * If the user closes the tab / app while a game is in progress, we
+   * immediately persist the participation with the elapsed time and the
+   * reason "disconnected". This makes sure that:
+   *   1.   The time already spent is counted on the backend.
+   *   2.   The backend now thinks the user already participated so a second
+   *        attempt is impossible.
+   */
+
+  useEffect(() => {
+    const handlePageHide = () => {
+      // 🎵 Arrêter la musique quand la page se ferme
+      audioManager.stop()
+      setAudioPlaying(false)
+      
+      // Use the ref values to avoid stale closures
+      if (phaseRef.current === 'game' && !hasSubmittedRef.current && challengeId && user) {
+        const elapsed = Date.now() - gameStartTime.current
+
+        // Flag as submitted to avoid duplicate calls
+        hasSubmittedRef.current = true
+
+        // We cannot rely on React state here (the page is being closed), so
+        // use the low-level fetch with keepalive.
+        try {
+          const payload = {
+            timeHeld: elapsed,
+            challengesCompleted: points,
+            eliminationReason: 'disconnected'
+          }
+
+          const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null
+          const url = `${(process.env.NODE_ENV === 'production' ? 'https://0cb30698e141.ngrok.app/api' : 'https://0cb30698e141.ngrok.app/api')}/challenges/${challengeId}/participate`
+
+          fetch(url, {
+            method: 'POST',
+            body: JSON.stringify(payload),
+            headers: {
+              'Content-Type': 'application/json',
+              ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+            },
+            keepalive: true,
+            credentials: 'include'
+          })
+        } catch (e) {
+          console.error('❌ Failed to persist participation on unload:', e)
+        }
+      }
+    }
+
+    // pagehide is more reliable than beforeunload on mobile browsers
+    window.addEventListener('pagehide', handlePageHide)
+
+    return () => {
+      window.removeEventListener('pagehide', handlePageHide)
+    }
+  }, [challengeId, user, points])
 
   const newPosition = () => {
     if (!gameRef.current) return
@@ -245,6 +313,16 @@ export default function ButtonGame({ challengeId }: ButtonGameProps) {
     setIsMoving(false)
     setPressed(true)
     
+    // 🎵 Démarrer la musique ambient
+    audioManager.start().then(() => {
+      // Démarrer avec un fade in doux
+      audioManager.fadeIn(3000)
+      setAudioPlaying(true)
+      console.log('🎵 Musique ambient démarrée')
+    }).catch(e => {
+      console.warn('🎵 Impossible de démarrer la musique:', e)
+    })
+    
     // Enregistrer le temps de début
     gameStartTime.current = Date.now()
     
@@ -256,12 +334,27 @@ export default function ButtonGame({ challengeId }: ButtonGameProps) {
   const finish = async (reason: 'timeout' | 'voluntary') => {
     console.log('🏁 Fin de partie, raison:', reason)
     
+    // 🎵 Arrêter la musique avec un fade out
+    audioManager.fadeOut(2000)
+    setTimeout(() => {
+      audioManager.stop()
+      setAudioPlaying(false)
+      console.log('🎵 Musique arrêtée')
+    }, 2000)
+    
     // Calculer le score final basé sur le temps de survie
     const finalTimeMs = Date.now() - gameStartTime.current
     const finalScore = Math.floor(finalTimeMs / 10) // Score en centisecondes pour l'affichage
     
     console.log('⏱️ Temps de survie:', finalTimeMs, 'ms, Score:', finalScore, 'Défis complétés:', points)
     
+    if (hasSubmittedRef.current) {
+      // Already submitted through pagehide – avoid double submission
+      return
+    }
+
+    hasSubmittedRef.current = true
+
     setPhase('over')
     setWaiting(false)
     setShowTimer(false)
@@ -335,6 +428,10 @@ export default function ButtonGame({ challengeId }: ButtonGameProps) {
   }
 
   const restart = () => {
+    // 🎵 Arrêter la musique
+    audioManager.stop()
+    setAudioPlaying(false)
+    
     setPhase('start')
     setPoints(0)
     setSeconds(0)
@@ -477,6 +574,41 @@ export default function ButtonGame({ challengeId }: ButtonGameProps) {
 
         {/* Espaceur pour équilibrer */}
         <div style={{ width: '32px' }} />
+
+        {/* Indicateur audio - visible pendant le jeu */}
+        <AnimatePresence>
+          {audioPlaying && phase === 'game' && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.8 }}
+              style={{
+                position: 'absolute',
+                right: '16px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                fontSize: '11px',
+                color: '#60a5fa',
+                fontWeight: '500'
+              }}
+            >
+              <motion.div
+                animate={{ scale: [1, 1.2, 1] }}
+                transition={{ duration: 2, repeat: Infinity }}
+                style={{
+                  width: '6px',
+                  height: '6px',
+                  borderRadius: '50%',
+                  backgroundColor: '#60a5fa'
+                }}
+              />
+              <span>♪</span>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </motion.header>
 
       {/* LE BOUTON */}

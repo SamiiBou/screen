@@ -23,6 +23,9 @@ export interface IUser extends Document {
   bestTime: number
   totalChallengesPlayed: number
   
+  // HODL Token balance
+  hodlTokenBalance: number
+  
   createdAt: Date
   updatedAt: Date
   
@@ -107,6 +110,13 @@ const UserSchema: Schema = new Schema({
   totalChallengesPlayed: {
     type: Number,
     default: 0
+  },
+  
+  // HODL Token balance
+  hodlTokenBalance: {
+    type: Number,
+    default: 5, // Initialize with 5 tokens
+    min: 0
   }
 }, {
   timestamps: true
@@ -133,6 +143,7 @@ UserSchema.methods.getPublicProfile = function() {
     verified: this.verified,
     bestTime: this.bestTime,
     totalChallengesPlayed: this.totalChallengesPlayed,
+    hodlTokenBalance: this.hodlTokenBalance,
     createdAt: this.createdAt
   }
 }

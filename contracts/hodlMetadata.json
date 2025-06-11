@@ -1,0 +1,12 @@
+{
+  "name": "HODL",
+  "symbol": "HODL",
+  "description": "The HODL token rewards users who hold their tokens and engage with the ecosystem.",
+  "image": "ipfs://bafkreidgqonfwdicpbe2rxfkejumxo33s6wl63bq6qigjdgc4xlvctcsfi",
+  "attributes": [
+    {
+      "trait_type": "Blockchain",
+      "value": "World Chain"
+    }
+  ]
+}

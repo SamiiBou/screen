@@ -7,6 +7,7 @@ import authRoutes from './routes/auth'
 import challengeRoutes from './routes/challenges'
 import leaderboardRoutes from './routes/leaderboard'
 import setupRoutes from './routes/setup'
+import hodlRoutes from './routes/hodl'
 
 dotenv.config()
 
@@ -62,6 +63,7 @@ app.use('/api/auth', authRoutes)
 app.use('/api/challenges', challengeRoutes)
 app.use('/api/leaderboard', leaderboardRoutes)
 app.use('/api/setup', setupRoutes)
+app.use('/api/hodl', hodlRoutes)
 
 app.get('/api/health', (req, res) => {
   res.json({ 

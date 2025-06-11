@@ -813,18 +813,38 @@ router.post('/:challengeId/participate', auth, async (req: AuthRequest, res) => 
         participation: paidParticipation
       })
     } else {
-      // Challenge gratuit - logique originale
-      const existingParticipation = await Participation.findOne({
-        userId,
-        challengeId
-      })
+      // Challenge gratuit - permettre la mise à jour s'il existe déjà une participation sans résultat
+      const existingParticipation = await Participation.findOne({ userId, challengeId })
 
       if (existingParticipation) {
-        return res.status(400).json({ 
-          message: 'Vous avez déjà participé à ce challenge' 
+        if (existingParticipation.timeHeld > 0) {
+          // L'utilisateur a déjà terminé ce challenge
+          return res.status(400).json({ 
+            message: 'Vous avez déjà participé à ce challenge' 
+          })
+        }
+
+        // Mettre à jour la participation existante (tentative déjà créée mais pas terminée)
+        existingParticipation.timeHeld = timeHeld
+        existingParticipation.challengesCompleted = challengesCompleted || 0
+        existingParticipation.eliminationReason = eliminationReason
+
+        await existingParticipation.save()
+
+        await User.findByIdAndUpdate(userId, {
+          $inc: { totalChallengesPlayed: 1 },
+          $max: { bestTime: timeHeld }
+        })
+
+        await calculateRankings(challengeId)
+
+        return res.status(201).json({
+          message: 'Participation mise à jour avec succès',
+          participation: existingParticipation
         })
       }
 
+      // Aucune participation précédente – créer une nouvelle entrée
       const participation = new Participation({
         userId,
         challengeId,

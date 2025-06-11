@@ -258,6 +258,38 @@ class ApiService {
     }
   }
 
+  // HODL Token Methods
+  async getHodlBalance() {
+    return this.request('/hodl/balance')
+  }
+
+  async generateHodlVoucher() {
+    return this.request('/hodl/generate-voucher', {
+      method: 'POST'
+    })
+  }
+
+  async confirmHodlClaim(transactionHash: string, amount?: string) {
+    return this.request('/hodl/claim-success', {
+      method: 'POST',
+      body: JSON.stringify({ transactionHash, amount })
+    })
+  }
+
+  async reportFailedHodlClaim(error: string, transactionId?: string) {
+    return this.request('/hodl/claim-failed', {
+      method: 'POST',
+      body: JSON.stringify({ error, transactionId })
+    })
+  }
+
+  async addHodlTokens(amount: number) {
+    return this.request('/hodl/add-tokens', {
+      method: 'POST',
+      body: JSON.stringify({ amount })
+    })
+  }
+
   // Utility methods
   logout() {
     this.setToken(null)

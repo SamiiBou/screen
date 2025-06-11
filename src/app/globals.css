@@ -260,3 +260,10 @@ body {
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
 }
+
+/* Entry Fee positioning */
+.entry-fee-position {
+  margin-top: 5px !important;
+  position: relative;
+  top: 0.5rem !important;
+}

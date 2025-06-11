@@ -120,7 +120,7 @@ function ChallengeLeaderboard({ challengeId }: { challengeId: string }) {
         transition={{ delay: 0.6 }}
         className="bg-gray-50 rounded-xl p-6 mt-8"
       >
-        <h3 className="text-2xl font-light text-black mb-8">Classement</h3>
+        <h3 className="text-2xl font-light text-black mb-8">Leaderboard</h3>
         <div className="flex items-center justify-center py-8">
           <motion.div
             className="w-6 h-6 border-2 border-black border-t-transparent rounded-full"
@@ -140,8 +140,8 @@ function ChallengeLeaderboard({ challengeId }: { challengeId: string }) {
         transition={{ delay: 0.6 }}
         className="bg-gray-50 rounded-xl p-6 mt-8"
       >
-        <h3 className="text-lg font-semibold text-black mb-4">🏆 Classement Actuel</h3>
-        <p className="text-gray-500 text-center py-4">Impossible de charger le classement</p>
+        <h3 className="text-lg font-semibold text-black mb-4">🏆 Current Leaderboard</h3>
+        <p className="text-gray-500 text-center py-4">Unable to load leaderboard</p>
       </motion.div>
     )
   }
@@ -154,7 +154,7 @@ function ChallengeLeaderboard({ challengeId }: { challengeId: string }) {
       className="bg-white border border-gray-100 rounded-2xl p-8 mt-12"
     >
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-black">🏆 Classement Actuel</h3>
+        <h3 className="text-lg font-semibold text-black">🏆 Current Leaderboard</h3>
         {leaderboard.length > 0 && (
           <span className="text-sm text-gray-500">Top {Math.min(leaderboard.length, 10)}</span>
         )}
@@ -162,13 +162,13 @@ function ChallengeLeaderboard({ challengeId }: { challengeId: string }) {
       
       {leaderboard.length === 0 ? (
         <div className="text-center py-12">
-          <p className="text-gray-400 text-sm">Aucune participation pour le moment</p>
+          <p className="text-gray-400 text-sm">No participants yet</p>
         </div>
       ) : (
         <div className="space-y-2">
           {leaderboard.slice(0, 10).map((entry, index) => (
             <motion.div
-              key={entry.rank}
+              key={`${entry.username}-${index}`}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.05 }}
@@ -199,7 +199,7 @@ function ChallengeLeaderboard({ challengeId }: { challengeId: string }) {
                 onClick={() => window.open(`/leaderboard/challenge/${challengeId}`, '_blank')}
                 className="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300 transition-colors text-sm"
               >
-                Voir le classement complet →
+                View Full Leaderboard →
               </AceternityButton>
             </div>
           )}
@@ -610,12 +610,6 @@ function ChallengePage() {
               ← Back
             </AceternityButton>
             
-            <motion.h1 
-              className="text-lg font-medium text-black"
-              whileHover={{ scale: 1.02 }}
-            >
-              Challenge
-            </motion.h1>
             
           </div>
         </div>
@@ -637,50 +631,67 @@ function ChallengePage() {
           }}
         >
           
-          <motion.div
-            initial={{ opacity: 0, y: 40 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-center mb-12"
-          >
-            <h1 className="text-5xl md:text-7xl font-light text-black mb-8 tracking-tight">
-              {displayChallenge?.title}
-              {showingPartial && (
-                <motion.span 
-                  className="text-sm text-gray-400 block mt-2"
-                  animate={{ opacity: [0.5, 1, 0.5] }}
-                  transition={{ duration: 1.5, repeat: Infinity }}
-                >
-                  Loading details...
-                </motion.span>
-              )}
-            </h1>
-          </motion.div>
 
+          {/* Prize Pool Section */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="grid grid-cols-3 gap-8 mb-16 max-w-lg mx-auto"
+            className="mb-16"
           >
-            <div className="text-center">
-              <div className="text-2xl font-light text-black mb-1">
-                {showingPartial ? '???' : displayChallenge?.firstPrize || '0'} WLD
-              </div>
-              <div className="text-gray-400 text-xs font-medium">1ST PRIZE</div>
-              <div className="text-sm text-gray-600 mt-1">
-                {showingPartial ? 'Loading...' : `2nd: ${displayChallenge?.secondPrize || 0} • 3rd: ${displayChallenge?.thirdPrize || 0}`}
+            {/* Prize Pool */}
+            <div className="bg-gradient-to-r from-gray-50 to-white border border-gray-200 rounded-3xl p-8 mb-8">
+              <h3 className="text-xl font-semibold text-gray-800 mb-6 text-center">Prize Pool</h3>
+              <div className="grid grid-cols-3 gap-6">
+                {/* 1st Place */}
+                <div className="text-center p-4 bg-gradient-to-b from-yellow-50 to-yellow-100 rounded-2xl border border-yellow-200">
+                  <div className="w-8 h-8 bg-gradient-to-r from-yellow-400 to-yellow-500 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <span className="text-white text-sm font-bold">1</span>
+                  </div>
+                  <div className="text-lg font-bold text-gray-800 mb-1">
+                    {showingPartial ? '???' : displayChallenge?.firstPrize || '0'} WLD
+                  </div>
+                  <div className="text-xs text-yellow-700 font-medium">FIRST PLACE</div>
+                </div>
+
+                {/* 2nd Place */}
+                <div className="text-center p-4 bg-gradient-to-b from-gray-50 to-gray-100 rounded-2xl border border-gray-200">
+                  <div className="w-7 h-7 bg-gradient-to-r from-gray-400 to-gray-500 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <span className="text-white text-sm font-bold">2</span>
+                  </div>
+                  <div className="text-base font-semibold text-gray-700 mb-1">
+                    {showingPartial ? '???' : displayChallenge?.secondPrize || '0'} WLD
+                  </div>
+                  <div className="text-xs text-gray-600 font-medium">SECOND PLACE</div>
+                </div>
+
+                {/* 3rd Place */}
+                <div className="text-center p-4 bg-gradient-to-b from-orange-50 to-orange-100 rounded-2xl border border-orange-200">
+                  <div className="w-6 h-6 bg-gradient-to-r from-orange-400 to-orange-500 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <span className="text-white text-xs font-bold">3</span>
+                  </div>
+                  <div className="text-sm font-semibold text-gray-600 mb-1">
+                    {showingPartial ? '???' : displayChallenge?.thirdPrize || '0'} WLD
+                  </div>
+                  <div className="text-xs text-orange-700 font-medium">THIRD PLACE</div>
+                </div>
               </div>
             </div>
-            <div className="text-center">
-              <div className="text-3xl font-light text-black mb-1">
-                {showingPartial ? '???' : displayChallenge?.currentParticipants || '0'}
-                <span className="text-gray-300">/{showingPartial ? '???' : displayChallenge?.maxParticipants || '0'}</span>
+
+            {/* Game Stats */}
+            <div className="grid grid-cols-2 gap-6 max-w-md mx-auto">
+              <div className="text-center p-6 bg-white border border-gray-200 rounded-2xl">
+                <div className="text-3xl font-light text-black mb-2">
+                  {showingPartial ? '???' : displayChallenge?.currentParticipants || '0'}
+                  <span className="text-gray-300">/{showingPartial ? '???' : displayChallenge?.maxParticipants || '0'}</span>
+                </div>
+                <div className="text-gray-500 text-sm font-medium">PLAYERS</div>
               </div>
-              <div className="text-gray-400 text-sm font-medium">PLAYERS</div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl font-light text-black mb-1">{displayChallenge?.participationPrice || 0} WLD</div>
-              <div className="text-gray-400 text-sm font-medium">ENTRY FEE</div>
+              
+              <div className="text-center p-6 bg-white border border-gray-200 rounded-2xl">
+                <div className="text-3xl font-light text-black mb-2">{displayChallenge?.participationPrice || 0} WLD</div>
+                <div className="text-gray-500 text-sm font-medium">ENTRY FEE</div>
+              </div>
             </div>
           </motion.div>
 
@@ -778,13 +789,6 @@ function ChallengePage() {
                     }}
                   >
                     {console.log('🖥️ [UI DEBUG] Showing JOIN CHALLENGE BUTTON')}
-                    {displayChallenge?.participationPrice > 0 && participationStatus.hasPaid && (
-                      <div className="bg-green-50 border border-green-200 rounded-xl p-4 mb-4">
-                        <p className="text-green-800 text-sm">
-                          ✅ Payment confirmed! You can now join the challenge.
-                        </p>
-                      </div>
-                    )}
                     <button
                       type="button"
 
@@ -811,7 +815,7 @@ function ChallengePage() {
                       }}
                       disabled={isJoining || isNavigating || showingPartial}
                     >
-                      {isJoining ? 'Joining...' : isNavigating ? 'Starting...' : showingPartial ? 'Loading...' : 'Join Challenge'}
+                      {isJoining ? 'Starting...' : isNavigating ? 'Loading...' : showingPartial ? 'Loading...' : 'PLAY NOW'}
                     </button>
                   </div>
                 )}
@@ -851,6 +855,18 @@ function ChallengePage() {
           </motion.div>
 
           <ChallengeLeaderboard challengeId={challengeId} />
+
+          {/* Challenge Rules - Apple footer style, subtle but present */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 1.0 }}
+            className="mt-8 pt-6 border-t border-gray-100"
+          >
+            <p className="text-gray-500 text-xs text-center leading-relaxed max-w-lg mx-auto">
+              Challenges are valid when fully subscribed • Prize distribution occurs daily at 00:00 GMT
+            </p>
+          </motion.div>
 
         </div>
       </div>
