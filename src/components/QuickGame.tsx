@@ -43,6 +43,8 @@ export default function QuickGame({ onClose }: QuickGameProps) {
 
   // Blocage total mobile
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
     const body = document.body
     const html = document.documentElement
     

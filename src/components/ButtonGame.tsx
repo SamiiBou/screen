@@ -52,6 +52,8 @@ export default function ButtonGame({ challengeId }: ButtonGameProps) {
 
   // Blocage total mobile
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+    
     const body = document.body
     const html = document.documentElement
     
