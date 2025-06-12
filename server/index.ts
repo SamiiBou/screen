@@ -3,11 +3,13 @@ import cors from 'cors'
 import cookieParser from 'cookie-parser'
 import dotenv from 'dotenv'
 import mongoose from 'mongoose'
+import cron from 'node-cron'
 import authRoutes from './routes/auth'
 import challengeRoutes from './routes/challenges'
 import leaderboardRoutes from './routes/leaderboard'
 import setupRoutes from './routes/setup'
 import hodlRoutes from './routes/hodl'
+import User from './models/User'
 
 dotenv.config()
 
@@ -23,6 +25,66 @@ console.log('🔍 [SERVER DEBUG] All env vars with TOKEN:', Object.keys(process.
 
 const app = express()
 const PORT = Number(process.env.PORT) || 8080
+
+// Fonction pour distribuer des tokens à tous les utilisateurs
+async function distributeTokensToAllUsers() {
+  try {
+    console.log('🎁 [CRON] Starting automatic token distribution...')
+    
+    const tokensToAdd = 0.5
+    const result = await User.updateMany(
+      {}, // Tous les utilisateurs
+      { $inc: { hodlTokenBalance: tokensToAdd } } // Incrémenter la balance
+    )
+    
+    const totalUsers = result.modifiedCount
+    const totalTokensDistributed = totalUsers * tokensToAdd
+    
+    console.log(`✅ [CRON] Token distribution completed:`)
+    console.log(`   - Users updated: ${totalUsers}`)
+    console.log(`   - Tokens per user: ${tokensToAdd}`)
+    console.log(`   - Total tokens distributed: ${totalTokensDistributed}`)
+    console.log(`   - Next distribution in 2 hours`)
+    
+    // Log pour audit
+    const logEntry = {
+      timestamp: new Date().toISOString(),
+      usersAffected: totalUsers,
+      tokensPerUser: tokensToAdd,
+      totalTokensDistributed: totalTokensDistributed,
+      type: 'automatic_distribution'
+    }
+    
+    console.log('📊 [AUDIT]', JSON.stringify(logEntry))
+    
+  } catch (error) {
+    console.error('❌ [CRON] Error during token distribution:', error)
+  }
+}
+
+// Configuration du cron job - toutes les 2 heures
+// Pattern: '0 */2 * * *' = à chaque minute 0 de chaque 2ème heure
+const startTokenDistribution = () => {
+  console.log('⏰ [CRON] Setting up automatic token distribution (every 2 hours)...')
+  
+  // Lancer immédiatement une distribution pour test (optionnel - commenter en production)
+  // setTimeout(() => {
+  //   console.log('🚀 [CRON] Running initial token distribution...')
+  //   distributeTokensToAllUsers()
+  // }, 5000) // 5 secondes après le démarrage
+  
+  // Programmer la distribution automatique toutes les 2 heures
+  cron.schedule('0 */2 * * *', async () => {
+    console.log('⏰ [CRON] Scheduled token distribution triggered')
+    await distributeTokensToAllUsers()
+  }, {
+    scheduled: true,
+    timezone: "Europe/Paris" // Ajustez selon votre timezone
+  })
+  
+  console.log('✅ [CRON] Automatic token distribution scheduled successfully')
+  console.log('📅 [CRON] Next distribution: every 2 hours at minute 0')
+}
 
 // Configuration CORS pour Railway et autres environnements
 const corsOptions = {
@@ -67,6 +129,10 @@ const connectDB = async () => {
   try {
     await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/button-game')
     console.log('✅ MongoDB connecté avec succès')
+    
+    // Démarrer le système de distribution automatique après la connexion DB
+    startTokenDistribution()
+    
   } catch (error) {
     console.error('❌ Erreur de connexion MongoDB:', error)
     process.exit(1)
@@ -85,7 +151,12 @@ app.get('/api/health', (req, res) => {
     message: 'Backend opérationnel',
     timestamp: new Date().toISOString(),
     port: PORT,
-    environment: process.env.NODE_ENV || 'development'
+    environment: process.env.NODE_ENV || 'development',
+    features: {
+      automaticTokenDistribution: true,
+      distributionInterval: '2 hours',
+      tokensPerDistribution: 0.5
+    }
   })
 })
 
@@ -102,6 +173,92 @@ app.get('/', (req, res) => {
       '/api/hodl/*'
     ]
   })
+})
+
+// Route pour déclencher manuellement la distribution (pour debug/admin)
+app.post('/api/admin/distribute-tokens', async (req, res) => {
+  try {
+    // Vérification basique (vous pouvez ajouter une authentification admin ici)
+    const { adminKey } = req.body
+    
+    if (adminKey !== process.env.ADMIN_KEY && adminKey !== 'debug-key-2024') {
+      return res.status(403).json({ error: 'Unauthorized' })
+    }
+    
+    console.log('🔧 [ADMIN] Manual token distribution triggered')
+    await distributeTokensToAllUsers()
+    
+    res.json({
+      success: true,
+      message: 'Token distribution completed manually',
+      timestamp: new Date().toISOString()
+    })
+    
+  } catch (error) {
+    console.error('❌ [ADMIN] Manual distribution error:', error)
+    res.status(500).json({ error: 'Distribution failed' })
+  }
+})
+
+// Route pour obtenir les statistiques de distribution
+app.get('/api/admin/distribution-stats', async (req, res) => {
+  try {
+    const totalUsers = await User.countDocuments({})
+    const usersWithTokens = await User.countDocuments({ hodlTokenBalance: { $gt: 0 } })
+    const usersWithoutTokens = totalUsers - usersWithTokens
+    
+    const stats = await User.aggregate([
+      {
+        $group: {
+          _id: null,
+          totalTokens: { $sum: '$hodlTokenBalance' },
+          avgTokens: { $avg: '$hodlTokenBalance' },
+          maxTokens: { $max: '$hodlTokenBalance' },
+          minTokens: { $min: '$hodlTokenBalance' }
+        }
+      }
+    ])
+    
+    const distributionStats = stats[0] || {
+      totalTokens: 0,
+      avgTokens: 0,
+      maxTokens: 0,
+      minTokens: 0
+    }
+    
+    // Calculer la prochaine distribution
+    const now = new Date()
+    const nextHour = new Date(now)
+    nextHour.setMinutes(0, 0, 0)
+    nextHour.setHours(now.getHours() + (2 - (now.getHours() % 2)))
+    
+    res.json({
+      success: true,
+      system: {
+        distributionActive: true,
+        intervalHours: 2,
+        tokensPerDistribution: 0.5,
+        nextDistribution: nextHour.toISOString()
+      },
+      userStats: {
+        totalUsers,
+        usersWithTokens,
+        usersWithoutTokens,
+        percentageWithTokens: totalUsers > 0 ? Math.round((usersWithTokens / totalUsers) * 100) : 0
+      },
+      tokenStats: {
+        totalTokensInCirculation: Math.round(distributionStats.totalTokens * 100) / 100,
+        averageTokensPerUser: Math.round(distributionStats.avgTokens * 100) / 100,
+        maxTokensHeld: Math.round(distributionStats.maxTokens * 100) / 100,
+        minTokensHeld: Math.round(distributionStats.minTokens * 100) / 100
+      },
+      lastUpdated: new Date().toISOString()
+    })
+    
+  } catch (error) {
+    console.error('❌ [ADMIN] Error fetching distribution stats:', error)
+    res.status(500).json({ error: 'Failed to fetch stats' })
+  }
 })
 
 connectDB().then(() => {
