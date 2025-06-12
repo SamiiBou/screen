@@ -3,7 +3,7 @@
 ## Configuration ngrok
 
 ### URLs actuelles :
-- **Frontend**: https://80887bc5356b.ngrok.app → http://localhost:3001
+- **Frontend**: https://screen-fhdfrzon0-samiibous-projects.vercel.app → http://localhost:3001
 - **Backend**: https://screen-production.up.railway.app → http://localhost:5173
 
 ### Variables d'environnement nécessaires (.env)
@@ -46,7 +46,7 @@ ngrok http 5173
 ## CORS Configuration
 
 Le serveur est configuré pour accepter les requêtes depuis :
-- https://80887bc5356b.ngrok.app (frontend ngrok)
+- https://screen-fhdfrzon0-samiibous-projects.vercel.app (frontend ngrok)
 - http://localhost:3001 (frontend local)
 - http://localhost:3000 (frontend local alternatif)
 

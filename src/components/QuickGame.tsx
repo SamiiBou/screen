@@ -478,8 +478,7 @@ export default function QuickGame({ onClose }: QuickGameProps) {
               height: '160px',
               borderRadius: '80px',
               backgroundColor: '#60a5fa',
-              translateX: '-50%',
-              translateY: '-50%',
+              transform: 'translate(-50%, -50%)',
               zIndex: 75,
             }}
           />
@@ -508,8 +507,8 @@ export default function QuickGame({ onClose }: QuickGameProps) {
           e.preventDefault()
           onRelease()
         }}
-        initial={{ scale: 0, opacity: 0, translateX: '-50%', translateY: '-50%' }}
-        animate={{ scale: pressed ? 0.92 : 1, opacity: 1, translateX: '-50%', translateY: '-50%' }}
+        initial={{ scale: 0, opacity: 0, x: '-50%', y: '-50%' }}
+        animate={{ scale: pressed ? 0.92 : 1, opacity: 1, x: '-50%', y: '-50%' }}
         transition={{ 
           type: "spring", 
           stiffness: 300, 
