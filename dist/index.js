@@ -28,7 +28,7 @@ const PORT = Number(process.env.PORT) || 8080;
 // Configuration CORS pour Railway et autres environnements
 const corsOptions = {
     origin: [
-        'https://screen-fhdfrzon0-samiibous-projects.vercel.app', // Frontend ngrok
+        'https://screen-fawn.vercel.app', // Frontend ngrok
         'http://localhost:3001', // Frontend local
         'http://localhost:3000', // Frontend local alternatif
         'https://screen-production.up.railway.app', // Railway backend
@@ -102,7 +102,7 @@ connectDB().then(() => {
     const server = app.listen(PORT, '0.0.0.0', () => {
         console.log(`🚀 Serveur démarré sur le port ${PORT}`);
         console.log(`🔗 Backend accessible via: https://screen-production.up.railway.app`);
-        console.log(`🌐 Frontend accessible via: https://screen-fhdfrzon0-samiibous-projects.vercel.app`);
+        console.log(`🌐 Frontend accessible via: https://screen-fawn.vercel.app`);
         console.log(`🌍 Server listening on 0.0.0.0:${PORT}`);
     });
     // Gestion gracieuse de l'arrêt
