@@ -1,0 +1,21 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# Vérification TypeScript et linting avant commit
+echo "🔍 Vérification avant commit..."
+
+# TypeScript check
+npm run type-check
+if [ $? -ne 0 ]; then
+    echo "❌ Erreurs TypeScript! Commit annulé."
+    exit 1
+fi
+
+# ESLint check
+npm run lint
+if [ $? -ne 0 ]; then
+    echo "❌ Erreurs de linting! Commit annulé."
+    exit 1
+fi
+
+echo "✅ Vérifications réussies!" 
