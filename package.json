@@ -7,7 +7,9 @@
     "dev:server": "nodemon --exec ts-node --project tsconfig.server.json server/index.ts",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "type-check": "tsc --noEmit",
+    "check-all": "npm run type-check && npm run lint"
   },
   "dependencies": {
     "@radix-ui/react-label": "^2.1.7",

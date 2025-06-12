@@ -147,7 +147,13 @@ export default function HodlBalance({ className = '' }: HodlBalanceProps) {
 
   const handleClaimSuccess = async () => {
     try {
-      const response = await apiService.confirmHodlClaim(transactionId, claimData?.voucher.amount)
+      // Vérifier que claimData et amount existent
+      if (!claimData?.voucher?.amount) {
+        console.error('❌ Données de claim manquantes')
+        return
+      }
+
+      const response = await apiService.confirmHodlClaim(transactionId, claimData.voucher.amount)
 
       console.log('🎉 Claim confirmé avec succès!', response)
       
