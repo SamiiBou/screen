@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import './globals.css'
+import '../components/HumanVerificationModal.css'
 import ErudaDebugger from '@/components/ErudaDebugger'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { ChallengesProvider } from '@/contexts/ChallengesContext'
