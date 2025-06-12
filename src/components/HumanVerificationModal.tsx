@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { MiniKit, VerificationLevel } from '@worldcoin/minikit-js';
 import { apiService } from '@/utils/api';
 import Image from 'next/image';
-import './HumanVerificationModal.css';
 
 interface HumanVerificationModalProps {
   isOpen: boolean;
