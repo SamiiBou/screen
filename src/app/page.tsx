@@ -28,9 +28,13 @@ interface Challenge {
 
 function HomePage() {
   const [activeChallenges, setActiveChallenges] = useState<Challenge[]>([])
+  const [filteredChallenges, setFilteredChallenges] = useState<Challenge[]>([])
   const [loading, setLoading] = useState(true)
   const [navigatingToChallengeId, setNavigatingToChallengeId] = useState<string | null>(null)
   const [showQuickGame, setShowQuickGame] = useState(false)
+  const [selectedPriceFilter, setSelectedPriceFilter] = useState<number | null>(null)
+  const [currentPage, setCurrentPage] = useState(1)
+  const challengesPerPage = 3
   const navigatingRef = useRef<Record<string, boolean>>({})
   const { user, isAuthenticated } = useAuth()
   const { setChallengesList, preloadChallenge } = useChallenges()
@@ -42,6 +46,7 @@ function HomePage() {
         const response = await apiService.getActiveChallenges()
         const challenges = response.challenges || []
         setActiveChallenges(challenges)
+        setFilteredChallenges(challenges)
         // Mettre à jour le cache des challenges
         setChallengesList(challenges)
         
@@ -62,6 +67,27 @@ function HomePage() {
 
     loadChallenges()
   }, [])
+
+  // Filtrage par prix d'entrée
+  useEffect(() => {
+    let filtered = activeChallenges
+    
+    if (selectedPriceFilter !== null) {
+      filtered = activeChallenges.filter(challenge => 
+        challenge.participationPrice === selectedPriceFilter
+      )
+    }
+    
+    setFilteredChallenges(filtered)
+    setCurrentPage(1) // Reset à la page 1 quand on filtre
+  }, [activeChallenges, selectedPriceFilter])
+
+  // Pagination
+  const totalPages = Math.ceil(filteredChallenges.length / challengesPerPage)
+  const paginatedChallenges = filteredChallenges.slice(
+    (currentPage - 1) * challengesPerPage,
+    currentPage * challengesPerPage
+  )
 
   // SYSTÈME DE PRÉCHARGEMENT RADICAL
   const preloadChallengeOnHover = useCallback(async (challengeId: string) => {
@@ -155,6 +181,7 @@ function HomePage() {
                     const response = await apiService.getActiveChallenges()
                     const challenges = response.challenges || []
                     setActiveChallenges(challenges)
+                    setFilteredChallenges(challenges)
                     setChallengesList(challenges)
                     challenges.slice(0, 3).forEach((challenge: Challenge, index: number) => {
                       setTimeout(() => {
@@ -217,13 +244,18 @@ function HomePage() {
                 Connect Wallet
               </AceternityButton>
             </motion.div>
-          ) : activeChallenges.length === 0 ? (
+          ) : filteredChallenges.length === 0 ? (
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               className="text-center"
             >
-              <p className="text-gray-500 mb-6">No active challenges</p>
+              <p className="text-gray-500 mb-6">
+                {selectedPriceFilter !== null 
+                  ? `No challenges with ${selectedPriceFilter} WLD entry fee` 
+                  : "No active challenges"
+                }
+              </p>
               <AceternityButton 
                 onClick={async () => {
                   try {
@@ -231,6 +263,7 @@ function HomePage() {
                     const response = await apiService.getActiveChallenges()
                     const challenges = response.challenges || []
                     setActiveChallenges(challenges)
+                    setFilteredChallenges(challenges)
                     // Mettre à jour le cache des challenges
                     setChallengesList(challenges)
                     // Précharger les nouveaux challenges
@@ -249,12 +282,78 @@ function HomePage() {
               </AceternityButton>
             </motion.div>
           ) : (
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="space-y-6"
-            >
-              {activeChallenges.map((challenge, index) => (
+            <div>
+              {/* Filtres et pagination */}
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mb-8 space-y-6"
+              >
+                {/* Filtres par prix */}
+                <div className="flex justify-center">
+                  <div className="flex items-center space-x-1 bg-gray-50/80 rounded-full p-1 backdrop-blur-sm">
+                    <button
+                      onClick={() => setSelectedPriceFilter(null)}
+                      className={`px-4 py-2 rounded-full text-xs font-medium transition-all duration-200 ${
+                        selectedPriceFilter === null
+                          ? 'bg-white text-black shadow-sm'
+                          : 'text-gray-600 hover:text-black'
+                      }`}
+                    >
+                      All
+                    </button>
+                    <button
+                      onClick={() => setSelectedPriceFilter(1)}
+                      className={`px-4 py-2 rounded-full text-xs font-medium transition-all duration-200 ${
+                        selectedPriceFilter === 1
+                          ? 'bg-white text-black shadow-sm'
+                          : 'text-gray-600 hover:text-black'
+                      }`}
+                    >
+                      1 WLD
+                    </button>
+                    <button
+                      onClick={() => setSelectedPriceFilter(5)}
+                      className={`px-4 py-2 rounded-full text-xs font-medium transition-all duration-200 ${
+                        selectedPriceFilter === 5
+                          ? 'bg-white text-black shadow-sm'
+                          : 'text-gray-600 hover:text-black'
+                      }`}
+                    >
+                      5 WLD
+                    </button>
+                    <button
+                      onClick={() => setSelectedPriceFilter(10)}
+                      className={`px-4 py-2 rounded-full text-xs font-medium transition-all duration-200 ${
+                        selectedPriceFilter === 10
+                          ? 'bg-white text-black shadow-sm'
+                          : 'text-gray-600 hover:text-black'
+                      }`}
+                    >
+                      10 WLD
+                    </button>
+                  </div>
+                </div>
+
+                {/* Indicateur de résultats */}
+                <div className="text-center">
+                  <p className="text-xs text-gray-500">
+                    {selectedPriceFilter !== null ? (
+                      <>Showing {filteredChallenges.length} challenge{filteredChallenges.length !== 1 ? 's' : ''} with {selectedPriceFilter} WLD entry fee</>
+                    ) : (
+                      <>Showing {filteredChallenges.length} challenge{filteredChallenges.length !== 1 ? 's' : ''}</>
+                    )}
+                  </p>
+                </div>
+              </motion.div>
+
+              {/* Liste des challenges */}
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="space-y-6"
+              >
+                {paginatedChallenges.map((challenge, index) => (
                 <motion.div
                   key={challenge._id}
                   initial={{ opacity: 0, y: 20 }}
@@ -425,7 +524,55 @@ function HomePage() {
                   </div>
                 </motion.div>
               ))}
-            </motion.div>
+              </motion.div>
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <motion.div 
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="flex justify-center items-center space-x-2 mt-12"
+                >
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                    disabled={currentPage === 1}
+                    className={`w-8 h-8 rounded-full text-xs font-medium transition-all duration-200 ${
+                      currentPage === 1
+                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                        : 'bg-white text-black hover:bg-gray-50 shadow-sm hover:shadow-md'
+                    }`}
+                  >
+                    ←
+                  </button>
+                  
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                    <button
+                      key={page}
+                      onClick={() => setCurrentPage(page)}
+                      className={`w-8 h-8 rounded-full text-xs font-medium transition-all duration-200 ${
+                        currentPage === page
+                          ? 'bg-black text-white shadow-md'
+                          : 'bg-white text-black hover:bg-gray-50 shadow-sm hover:shadow-md'
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  ))}
+                  
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                    disabled={currentPage === totalPages}
+                    className={`w-8 h-8 rounded-full text-xs font-medium transition-all duration-200 ${
+                      currentPage === totalPages
+                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                        : 'bg-white text-black hover:bg-gray-50 shadow-sm hover:shadow-md'
+                    }`}
+                  >
+                    →
+                  </button>
+                </motion.div>
+              )}
+            </div>
           )}
         </div>
       </div>
