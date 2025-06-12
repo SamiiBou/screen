@@ -57,5 +57,8 @@
     "postcss": "^8.5.4",
     "ts-node": "^10.9.1",
     "typescript": "^5.0.0"
+  },
+  "overrides": {
+    "tailwindcss": "3.4.17"
   }
 }
