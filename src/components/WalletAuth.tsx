@@ -275,7 +275,7 @@ const WalletAuth: React.FC<WalletAuthProps> = ({ onAuthSuccess, onAuthError, onC
     try {
       console.log('🔍 Testing backend connectivity...')
       
-      const healthResponse = await fetch('https://0cb30698e141.ngrok.app/api/health', {
+      const healthResponse = await fetch('https://screen-production.up.railway.app/api/health', {
         method: 'GET',
         credentials: 'include',
         headers: {

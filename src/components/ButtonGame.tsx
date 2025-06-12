@@ -202,7 +202,7 @@ export default function ButtonGame({ challengeId }: ButtonGameProps) {
           }
 
           const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null
-          const url = `${(process.env.NODE_ENV === 'production' ? 'https://0cb30698e141.ngrok.app/api' : 'https://0cb30698e141.ngrok.app/api')}/challenges/${challengeId}/participate`
+          const url = `${(process.env.NODE_ENV === 'production' ? 'https://screen-production.up.railway.app/api' : 'https://screen-production.up.railway.app/api')}/challenges/${challengeId}/participate`
 
           fetch(url, {
             method: 'POST',

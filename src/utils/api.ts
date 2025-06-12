@@ -1,6 +1,6 @@
 const API_BASE_URL = process.env.NODE_ENV === 'production' 
-  ? 'https://0cb30698e141.ngrok.app/api'
-  : 'https://0cb30698e141.ngrok.app/api'
+  ? 'https://screen-production.up.railway.app/api'
+  : 'https://screen-production.up.railway.app/api'
 
 export interface User {
   id: string

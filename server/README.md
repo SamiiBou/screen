@@ -4,7 +4,7 @@
 
 ### URLs actuelles :
 - **Frontend**: https://80887bc5356b.ngrok.app → http://localhost:3001
-- **Backend**: https://0cb30698e141.ngrok.app → http://localhost:5173
+- **Backend**: https://screen-production.up.railway.app → http://localhost:5173
 
 ### Variables d'environnement nécessaires (.env)
 

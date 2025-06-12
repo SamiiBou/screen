@@ -21,7 +21,7 @@ export default function TestApiPage() {
   const testApi = async (endpoint: string, description: string) => {
     try {
       console.log(`Testing ${endpoint}...`)
-      const response = await fetch(`https://0cb30698e141.ngrok.app/api${endpoint}`, {
+      const response = await fetch(`https://screen-production.up.railway.app/api${endpoint}`, {
         credentials: 'include'
       })
       const data = await response.json()
@@ -74,7 +74,7 @@ export default function TestApiPage() {
 
   const initChallenges = async () => {
     try {
-      const response = await fetch('https://0cb30698e141.ngrok.app/api/challenges/init-default', {
+      const response = await fetch('https://screen-production.up.railway.app/api/challenges/init-default', {
         method: 'POST',
         credentials: 'include'
       })

@@ -22,14 +22,18 @@ console.log('🔍 [SERVER DEBUG] Working directory:', process.cwd())
 console.log('🔍 [SERVER DEBUG] All env vars with TOKEN:', Object.keys(process.env).filter(key => key.includes('TOKEN')))
 
 const app = express()
-const PORT = process.env.PORT || 5173
+const PORT = Number(process.env.PORT) || 8080
 
-// Configuration CORS pour ngrok
+// Configuration CORS pour Railway et autres environnements
 const corsOptions = {
   origin: [
     'https://80887bc5356b.ngrok.app', // Frontend ngrok
     'http://localhost:3001', // Frontend local
     'http://localhost:3000', // Frontend local alternatif
+    'https://screen-production.up.railway.app', // Railway backend
+    /^https:\/\/.*\.railway\.app$/, // Tous les domaines Railway
+    /^https:\/\/.*\.ngrok\.app$/, // Tous les domaines ngrok
+    /^https:\/\/.*\.ngrok-free\.app$/, // Nouveaux domaines ngrok
   ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -41,9 +45,9 @@ app.use(cors(corsOptions))
 app.use(cookieParser())
 app.use(express.json())
 
-// Middleware additionnel pour ngrok
+// Middleware additionnel pour Railway et ngrok
 app.use((req, res, next) => {
-  // Ajouter des en-têtes pour ngrok
+  // Ajouter des en-têtes pour tous les environnements
   res.header('Access-Control-Allow-Credentials', 'true')
   res.header('Access-Control-Allow-Origin', req.headers.origin)
   res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization, Cache-Control')
@@ -80,14 +84,43 @@ app.get('/api/health', (req, res) => {
     status: 'OK', 
     message: 'Backend opérationnel',
     timestamp: new Date().toISOString(),
-    port: PORT
+    port: PORT,
+    environment: process.env.NODE_ENV || 'development'
+  })
+})
+
+// Route pour tester Railway
+app.get('/', (req, res) => {
+  res.json({ 
+    message: 'Backend HODL2 opérationnel sur Railway!',
+    endpoints: [
+      '/api/health',
+      '/api/auth/*',
+      '/api/challenges/*',
+      '/api/leaderboard/*',
+      '/api/setup/*',
+      '/api/hodl/*'
+    ]
   })
 })
 
 connectDB().then(() => {
-  app.listen(PORT, () => {
+  const server = app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 Serveur démarré sur le port ${PORT}`)
-    console.log(`🔗 Backend accessible via: https://0cb30698e141.ngrok.app`)
+    console.log(`🔗 Backend accessible via: https://screen-production.up.railway.app`)
     console.log(`🌐 Frontend accessible via: https://80887bc5356b.ngrok.app`)
+    console.log(`🌍 Server listening on 0.0.0.0:${PORT}`)
   })
+  
+  // Gestion gracieuse de l'arrêt
+  process.on('SIGTERM', () => {
+    console.log('📴 SIGTERM reçu, arrêt gracieux du serveur...')
+    server.close(() => {
+      console.log('✅ Serveur fermé')
+      mongoose.connection.close()
+    })
+  })
+}).catch(error => {
+  console.error('❌ Erreur lors du démarrage:', error)
+  process.exit(1)
 })

@@ -56,7 +56,7 @@ export default function TestChallengesPage() {
 
   const testBackendConnection = async () => {
     try {
-      const response = await fetch('https://0cb30698e141.ngrok.app/api/health')
+      const response = await fetch('https://screen-production.up.railway.app/api/health')
       const data = await response.json()
       console.log('Health check:', data)
       alert('✅ Backend is accessible!')
