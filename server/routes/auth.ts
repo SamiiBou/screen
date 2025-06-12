@@ -390,4 +390,168 @@ router.get('/stats', async (req, res) => {
   }
 })
 
+// World ID verification endpoint
+router.post('/worldcoin-verify', async (req, res, next) => {
+  try {
+    const { proof, merkle_root, nullifier_hash, action, signal, app_id } = req.body
+
+    console.log('🔍 World ID verification data:', req.body)
+
+    // Vérifier que les données requises sont présentes
+    if (!proof || !merkle_root || !nullifier_hash || !action || !app_id) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Missing required verification data',
+      })
+    }
+
+    // Vérifier l'action
+    if (action !== 'verifyhuman') {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Invalid action for human verification',
+      })
+    }
+
+    // Vérifier l'app_id
+    if (app_id !== process.env.WORLD_APP_ID && app_id !== 'app_a0673c3ab430fecb1b2ff723784c7720') {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Invalid app ID',
+      })
+    }
+
+    // Vérifier si ce nullifier_hash a déjà été utilisé
+    const existingUser = await User.findOne({ humanVerificationNullifier: nullifier_hash })
+    if (existingUser) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'This verification has already been used',
+      })
+    }
+
+    // TODO: Ici, en production, vous devriez vérifier la preuve avec l'API World ID
+    // const { verifyCloudProof } = require('@worldcoin/minikit-js')
+    // const verifyRes = await verifyCloudProof(
+    //   { proof, merkle_root, nullifier_hash },
+    //   app_id,
+    //   action,
+    //   signal
+    // )
+    // if (!verifyRes.success) {
+    //   return res.status(400).json({
+    //     status: 'error',
+    //     message: 'Invalid World ID proof',
+    //   })
+    // }
+
+    // Simuler la vérification réussie pour le développement
+    console.log('✅ World ID verification simulated as successful')
+
+    res.status(200).json({
+      status: 'success',
+      message: 'World ID verification successful',
+      data: {
+        verified: true,
+        nullifier_hash,
+        action,
+      },
+    })
+  } catch (error) {
+    console.error('❌ World ID verification error:', error)
+    next(error)
+  }
+})
+
+// Mettre à jour le statut de vérification humaine de l'utilisateur
+router.post('/update-human-verification', auth, async (req: AuthRequest, res, next) => {
+  try {
+    const { nullifier_hash, verification_level } = req.body
+
+    if (!nullifier_hash) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Nullifier hash is required',
+      })
+    }
+
+    // Vérifier si ce nullifier_hash a déjà été utilisé par un autre utilisateur
+    const existingUser = await User.findOne({ 
+      humanVerificationNullifier: nullifier_hash,
+      _id: { $ne: req.user!._id }
+    })
+
+    if (existingUser) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'This verification has already been used by another user',
+      })
+    }
+
+    // Mettre à jour l'utilisateur actuel
+    const updatedUser = await User.findByIdAndUpdate(
+      req.user!._id,
+      {
+        humanVerified: true,
+        humanVerifiedAt: new Date(),
+        humanVerificationNullifier: nullifier_hash,
+        minikitVerificationLevel: verification_level || 'orb',
+        tokenMultiplier: 2, // 2x multiplier pour les humains vérifiés
+      },
+      { new: true }
+    )
+
+    if (!updatedUser) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'User not found',
+      })
+    }
+
+    console.log(`✅ User ${updatedUser.username} verified as human with 2x token multiplier`)
+
+    res.json({
+      status: 'success',
+      message: 'Human verification updated successfully',
+      data: {
+        humanVerified: updatedUser.humanVerified,
+        tokenMultiplier: updatedUser.tokenMultiplier,
+        verifiedAt: updatedUser.humanVerifiedAt,
+        benefits: {
+          tokenMultiplier: '2x',
+          humanOnlyChallenges: true,
+        }
+      }
+    })
+
+  } catch (error) {
+    console.error('❌ Update human verification error:', error)
+    next(error)
+  }
+})
+
+// Obtenir le statut de vérification humaine
+router.get('/human-verification-status', auth, async (req: AuthRequest, res, next) => {
+  try {
+    const user = req.user!
+
+    res.json({
+      status: 'success',
+      data: {
+        humanVerified: user.humanVerified,
+        humanVerifiedAt: user.humanVerifiedAt,
+        tokenMultiplier: user.tokenMultiplier,
+        benefits: {
+          tokenMultiplier: user.humanVerified ? '2x' : '1x',
+          humanOnlyChallenges: user.humanVerified,
+        }
+      }
+    })
+
+  } catch (error) {
+    console.error('❌ Get human verification status error:', error)
+    next(error)
+  }
+})
+
 export default router

@@ -8,9 +8,10 @@ import { useAuth } from '@/contexts/AuthContext'
 interface WalletAuthProps {
   onAuthSuccess?: (userData: any) => void
   onAuthError?: (error: any) => void
+  onConnectStart?: () => void
 }
 
-const WalletAuth: React.FC<WalletAuthProps> = ({ onAuthSuccess, onAuthError }) => {
+const WalletAuth: React.FC<WalletAuthProps> = ({ onAuthSuccess, onAuthError, onConnectStart }) => {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [debugInfo, setDebugInfo] = useState<any>(null)
@@ -162,6 +163,7 @@ const WalletAuth: React.FC<WalletAuthProps> = ({ onAuthSuccess, onAuthError }) =
     }
 
     console.log('✅ MiniKit detected, starting authentication')
+    onConnectStart?.() // Notify parent that connection is starting
     setIsLoading(true)
     setError(null)
 
@@ -331,29 +333,27 @@ const WalletAuth: React.FC<WalletAuthProps> = ({ onAuthSuccess, onAuthError }) =
         <button 
           onClick={signInWithWallet} 
           disabled={isLoading}
-          className={`w-full py-4 rounded-2xl font-semibold text-lg transition-all duration-300 relative overflow-hidden ${
+          className={`w-full py-4 rounded-2xl font-medium text-base transition-all duration-300 relative overflow-hidden ${
             isLoading 
-              ? 'bg-gray-500 cursor-not-allowed' 
-              : 'bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 shadow-lg hover:shadow-xl text-white'
+              ? 'bg-gray-200 text-gray-400 cursor-not-allowed' 
+              : 'bg-black text-white hover:bg-gray-900 shadow-lg hover:shadow-xl active:scale-[0.98]'
           }`}
         >
           {isLoading ? (
-            <>
-              <span className="loading-spinner inline-block w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></span>
+            <div className="flex items-center justify-center">
+              <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin mr-2"></div>
               Connecting...
-            </>
+            </div>
           ) : (
-            'Sign in with World'
+            <div className="flex items-center justify-center space-x-2">
+              <span>Connect your wallet</span>
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+              </svg>
+            </div>
           )}
         </button>
 
-        {/* Test Backend Button */}
-        <button
-          onClick={testBackendConnection}
-          className="w-full mt-4 py-2 rounded-xl font-medium text-sm bg-gray-600 hover:bg-gray-500 text-white transition-all duration-300"
-        >
-          🔧 Test Backend Connection
-        </button>
 
         {debugInfo && (
           <div className="debug-info mt-4 p-4 bg-gray-800/50 rounded-lg text-xs text-gray-300">

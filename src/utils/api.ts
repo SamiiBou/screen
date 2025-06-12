@@ -273,6 +273,57 @@ class ApiService {
     return !!this.token
   }
 
+  // Human Verification Methods
+  async getHumanVerificationStatus() {
+    return this.request('/auth/human-verification-status')
+  }
+
+  async verifyWorldID(worldIdData: any) {
+    return this.request('/auth/worldcoin-verify', {
+      method: 'POST',
+      body: JSON.stringify(worldIdData)
+    })
+  }
+
+  async updateHumanVerification(verificationData: any) {
+    return this.request('/auth/update-human-verification', {
+      method: 'POST',
+      body: JSON.stringify(verificationData)
+    })
+  }
+
+  // HODL Balance Methods
+  async getHodlBalance() {
+    return this.request('/hodl/balance')
+  }
+
+  async generateHodlVoucher() {
+    return this.request('/hodl/generate-voucher', {
+      method: 'POST'
+    })
+  }
+
+  async confirmHodlClaim(transactionHash: string, amount: string | number) {
+    return this.request('/hodl/claim-success', {
+      method: 'POST',
+      body: JSON.stringify({ transactionHash, amount })
+    })
+  }
+
+  async reportFailedHodlClaim(errorMessage: string, transactionId?: string) {
+    return this.request('/hodl/claim-failed', {
+      method: 'POST',
+      body: JSON.stringify({ error: errorMessage, transactionId })
+    })
+  }
+
+  async addHodlTokens(amount: number) {
+    return this.request('/hodl/add-tokens', {
+      method: 'POST',
+      body: JSON.stringify({ amount })
+    })
+  }
+
   // Legacy method compatibility (can be removed if not used elsewhere)
   async register() {
     throw new Error('Register with email is deprecated. Please use wallet authentication.')

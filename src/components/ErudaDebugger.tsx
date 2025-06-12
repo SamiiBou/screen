@@ -9,7 +9,12 @@ export default function ErudaDebugger() {
     const hasDebugParam = typeof window !== 'undefined' && 
       new URLSearchParams(window.location.search).get('debug') === '1'
 
-    if (isDev || hasDebugParam) {
+    // Détection World App / WebView mobile
+    const ua = typeof navigator !== 'undefined' ? navigator.userAgent || '' : ''
+    const isWorldApp = /WorldApp|World\s*Coin|MiniKit/i.test(ua)
+    const isMobileWebView = /Android|iPhone|iPad|iPod/i.test(ua) && /wv|WebView/i.test(ua)
+
+    if (isDev || hasDebugParam || isWorldApp || isMobileWebView) {
       // Charger Eruda dynamiquement
       const script = document.createElement('script')
       script.src = '//cdn.jsdelivr.net/npm/eruda'

@@ -2,27 +2,21 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
-import { useRouter } from 'next/navigation'
-import { useAuth } from '@/contexts/AuthContext'
-import { apiService } from '@/utils/api'
 import { AceternityButton } from './ui/AceternityButton'
-import { audioManager } from '@/utils/audioManager'
 
-interface ButtonGameProps {
-  challengeId?: string
+interface QuickGameProps {
+  onClose: () => void
 }
 
-export default function ButtonGame({ challengeId }: ButtonGameProps) {
+export default function QuickGame({ onClose }: QuickGameProps) {
   // États simplifiés
   const [phase, setPhase] = useState<'start' | 'game' | 'over'>('start')
   const [pressed, setPressed] = useState(false)
   const [points, setPoints] = useState(0)
   const [seconds, setSeconds] = useState(0)
   const [milliseconds, setMilliseconds] = useState(0)
-  const [challenge, setChallenge] = useState<any>(null)
   const [hasPlayed, setHasPlayed] = useState(false)
   const [canPlay, setCanPlay] = useState(true)
-  const [audioPlaying, setAudioPlaying] = useState(false)
   
   // Position du bouton
   const [pos, setPos] = useState({ x: 50, y: 50 })
@@ -40,9 +34,6 @@ export default function ButtonGame({ challengeId }: ButtonGameProps) {
   const phaseRef = useRef<'start' | 'game' | 'over'>('start')
   const gameStartTime = useRef<number>(0)
   const hasSubmittedRef = useRef<boolean>(false)
-  
-  const { user } = useAuth()
-  const router = useRouter()
 
   // Synchroniser phaseRef avec phase
   useEffect(() => {
@@ -107,32 +98,6 @@ export default function ButtonGame({ challengeId }: ButtonGameProps) {
     }
   }, [])
 
-  // Charger challenge et vérifier si l'utilisateur peut jouer
-  useEffect(() => {
-    if (challengeId) {
-      // Charger le challenge
-      apiService.getChallengeById(challengeId)
-        .then(res => setChallenge(res?.challenge))
-        .catch(console.error)
-      
-      // Vérifier si l'utilisateur peut participer
-      if (user) {
-        apiService.canParticipateInChallenge(challengeId)
-          .then(status => {
-            console.log('🔍 [PARTICIPATION CHECK] Statut:', status)
-            setCanPlay(status.canParticipate)
-            if (!status.canParticipate) {
-              console.log('⚠️ [PARTICIPATION CHECK] Utilisateur ne peut pas jouer')
-            }
-          })
-          .catch(error => {
-            console.error('❌ [PARTICIPATION CHECK] Erreur:', error)
-            setCanPlay(false)
-          })
-      }
-    }
-  }, [challengeId, user])
-
   // Chrono de jeu avec millisecondes
   useEffect(() => {
     if (phase === 'game') {
@@ -157,76 +122,11 @@ export default function ButtonGame({ challengeId }: ButtonGameProps) {
   // Cleanup
   useEffect(() => {
     return () => {
-      // 🎵 Arrêter la musique lors du démontage du composant
-      audioManager.stop()
-      setAudioPlaying(false)
-      
       if (mainTimer.current) clearInterval(mainTimer.current)
       if (moveTimer.current) clearTimeout(moveTimer.current)
       if (waitTimer.current) clearInterval(waitTimer.current)
     }
   }, [])
-
-  /*
-   * -----------------------------------------------------
-   *  🔒  Ensure we record the game if the user leaves   🔒
-   * -----------------------------------------------------
-   * If the user closes the tab / app while a game is in progress, we
-   * immediately persist the participation with the elapsed time and the
-   * reason "disconnected". This makes sure that:
-   *   1.   The time already spent is counted on the backend.
-   *   2.   The backend now thinks the user already participated so a second
-   *        attempt is impossible.
-   */
-
-  useEffect(() => {
-    const handlePageHide = () => {
-      // 🎵 Arrêter la musique quand la page se ferme
-      audioManager.stop()
-      setAudioPlaying(false)
-      
-      // Use the ref values to avoid stale closures
-      if (phaseRef.current === 'game' && !hasSubmittedRef.current && challengeId && user) {
-        const elapsed = Date.now() - gameStartTime.current
-
-        // Flag as submitted to avoid duplicate calls
-        hasSubmittedRef.current = true
-
-        // We cannot rely on React state here (the page is being closed), so
-        // use the low-level fetch with keepalive.
-        try {
-          const payload = {
-            timeHeld: elapsed,
-            challengesCompleted: points,
-            eliminationReason: 'disconnected'
-          }
-
-          const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null
-          const url = `${(process.env.NODE_ENV === 'production' ? 'https://0cb30698e141.ngrok.app/api' : 'https://0cb30698e141.ngrok.app/api')}/challenges/${challengeId}/participate`
-
-          fetch(url, {
-            method: 'POST',
-            body: JSON.stringify(payload),
-            headers: {
-              'Content-Type': 'application/json',
-              ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-            },
-            keepalive: true,
-            credentials: 'include'
-          })
-        } catch (e) {
-          console.error('❌ Failed to persist participation on unload:', e)
-        }
-      }
-    }
-
-    // pagehide is more reliable than beforeunload on mobile browsers
-    window.addEventListener('pagehide', handlePageHide)
-
-    return () => {
-      window.removeEventListener('pagehide', handlePageHide)
-    }
-  }, [challengeId, user, points])
 
   const newPosition = () => {
     if (!gameRef.current) return
@@ -291,7 +191,7 @@ export default function ButtonGame({ challengeId }: ButtonGameProps) {
       }, 1000)
     }, 700)
 
-    // Prochain mouvement
+    // Prochain mouvement - identique au vrai jeu
     const delay = 8000 + Math.random() * 4000
     console.log('⏳ Prochain mouvement programmé dans', Math.round(delay/1000), 'secondes')
     moveTimer.current = setTimeout(scheduleMove, delay)
@@ -315,16 +215,6 @@ export default function ButtonGame({ challengeId }: ButtonGameProps) {
     setIsMoving(false)
     setPressed(true)
     
-    // 🎵 Démarrer la musique ambient
-    audioManager.start().then(() => {
-      // Démarrer avec un fade in doux
-      audioManager.fadeIn(3000)
-      setAudioPlaying(true)
-      console.log('🎵 Musique ambient démarrée')
-    }).catch(e => {
-      console.warn('🎵 Impossible de démarrer la musique:', e)
-    })
-    
     // Enregistrer le temps de début
     gameStartTime.current = Date.now()
     
@@ -335,14 +225,6 @@ export default function ButtonGame({ challengeId }: ButtonGameProps) {
 
   const finish = async (reason: 'timeout' | 'voluntary') => {
     console.log('🏁 Fin de partie, raison:', reason)
-    
-    // 🎵 Arrêter la musique avec un fade out
-    audioManager.fadeOut(2000)
-    setTimeout(() => {
-      audioManager.stop()
-      setAudioPlaying(false)
-      console.log('🎵 Musique arrêtée')
-    }, 2000)
     
     // Calculer le score final basé sur le temps de survie
     const finalTimeMs = Date.now() - gameStartTime.current
@@ -372,23 +254,7 @@ export default function ButtonGame({ challengeId }: ButtonGameProps) {
       waitTimer.current = null
     }
     
-    // Sauvegarder avec les vraies valeurs
-    if (challengeId && user) {
-      try {
-        await apiService.participateInChallenge(challengeId, {
-          timeHeld: finalTimeMs, // Temps réel en millisecondes
-          challengesCompleted: points, // Nombre de défis réellement complétés
-          eliminationReason: reason
-        })
-        console.log('✅ Participation sauvegardée:', {
-          timeHeld: finalTimeMs,
-          challengesCompleted: points,
-          eliminationReason: reason
-        })
-      } catch (error) {
-        console.error('❌ Erreur sauvegarde:', error)
-      }
-    }
+    // Pas de sauvegarde pour le QuickGame (c'est juste une démo)
   }
 
   const onPress = () => {
@@ -430,10 +296,6 @@ export default function ButtonGame({ challengeId }: ButtonGameProps) {
   }
 
   const restart = () => {
-    // 🎵 Arrêter la musique
-    audioManager.stop()
-    setAudioPlaying(false)
-    
     setPhase('start')
     setPoints(0)
     setSeconds(0)
@@ -442,6 +304,9 @@ export default function ButtonGame({ challengeId }: ButtonGameProps) {
     setShowTimer(false)
     setIsMoving(false)
     setPressed(false)
+    setCanPlay(true)
+    setHasPlayed(false)
+    hasSubmittedRef.current = false
     
     // Nettoyer
     if (moveTimer.current) {
@@ -475,7 +340,8 @@ export default function ButtonGame({ challengeId }: ButtonGameProps) {
         WebkitUserSelect: 'none',
         backgroundColor: '#ffffff',
         display: 'flex',
-        flexDirection: 'column'
+        flexDirection: 'column',
+        zIndex: 1000
       }}
       onTouchMove={e => { e.preventDefault(); e.stopPropagation() }}
       onWheel={e => { e.preventDefault(); e.stopPropagation() }}
@@ -507,7 +373,7 @@ export default function ButtonGame({ challengeId }: ButtonGameProps) {
           <button 
             onClick={() => {
               console.log('🏠 [EXIT] Navigation vers l\'accueil depuis l\'écran de démarrage')
-              router.push('/')
+              onClose()
             }}
             style={{
               background: 'none',
@@ -574,43 +440,26 @@ export default function ButtonGame({ challengeId }: ButtonGameProps) {
           )}
         </AnimatePresence>
 
-        {/* Espaceur pour équilibrer */}
-        <div style={{ width: '32px' }} />
-
-        {/* Indicateur audio - visible pendant le jeu */}
-        <AnimatePresence>
-          {audioPlaying && phase === 'game' && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.8 }}
-              style={{
-                position: 'absolute',
-                right: '16px',
-                top: '50%',
-                transform: 'translateY(-50%)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px',
-                fontSize: '11px',
-                color: '#60a5fa',
-                fontWeight: '500'
-              }}
-            >
-              <motion.div
-                animate={{ scale: [1, 1.2, 1] }}
-                transition={{ duration: 2, repeat: Infinity }}
-                style={{
-                  width: '6px',
-                  height: '6px',
-                  borderRadius: '50%',
-                  backgroundColor: '#60a5fa'
-                }}
-              />
-              <span>♪</span>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        {/* Bouton fermer pour QuickGame */}
+        <button 
+          onClick={onClose}
+          style={{
+            background: 'none',
+            border: 'none',
+            fontSize: '20px',
+            color: '#666',
+            cursor: 'pointer',
+            padding: '6px',
+            borderRadius: '50%',
+            width: '32px',
+            height: '32px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}
+        >
+          ×
+        </button>
       </motion.header>
 
       {/* LE BOUTON */}
@@ -705,10 +554,10 @@ export default function ButtonGame({ challengeId }: ButtonGameProps) {
           lineHeight: '1'
         }}
       >
-        {!canPlay && phase === 'start' ? 'DÉJÀ JOUÉ' :
-         phase === 'over' ? 'FIN' : 
+        {!canPlay && phase === 'start' ? 'PLAYED' :
+         phase === 'over' ? 'END' : 
          phase === 'start' ? 'START' :
-         waiting ? 'APPUIE!' : 'TIENS'}
+         waiting ? 'PRESS!' : 'HOLD'}
       </motion.button>
 
       {/* Instructions */}
@@ -734,7 +583,7 @@ export default function ButtonGame({ challengeId }: ButtonGameProps) {
               margin: 0,
               textAlign: 'center'
             }}>
-              {canPlay ? 'Appuie pour commencer' : 'Tu as déjà participé à ce challenge'}
+              {canPlay ? 'Press to start' : 'You already participated in this challenge'}
             </p>
           </motion.div>
         )}
@@ -773,14 +622,14 @@ export default function ButtonGame({ challengeId }: ButtonGameProps) {
                 color: '#000000',
                 margin: '0 0 12px 0'
               }}>
-                Partie terminée
+                Game Over
               </h2>
               <p style={{
                 fontSize: '16px',
                 color: '#666666',
                 margin: '0 0 6px 0'
               }}>
-                Temps de survie
+                Survival Time
               </p>
               <p style={{
                 fontSize: '56px',
@@ -805,21 +654,30 @@ export default function ButtonGame({ challengeId }: ButtonGameProps) {
               }}>
                 <div style={{
                   padding: '16px 24px',
-                  backgroundColor: '#f5f5f5',
+                  backgroundColor: '#f0f9ff',
                   borderRadius: '16px',
                   fontSize: '14px',
-                  color: '#666',
-                  textAlign: 'center'
+                  color: '#0369a1',
+                  textAlign: 'center',
+                  border: '1px solid #bae6fd'
                 }}>
-                  Une seule tentative autorisée
+                  🎮 Demo completed! Join a real challenge to win prizes
                 </div>
                 
-                <AceternityButton 
-                  onClick={() => router.push('/')}
-                  className="bg-gray-100 text-black px-6 py-3 rounded-full text-base font-semibold hover:bg-gray-200 w-full"
-                >
-                  Retour à l'accueil
-                </AceternityButton>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <AceternityButton 
+                    onClick={restart}
+                    className="bg-gray-100 text-black px-4 py-2 rounded-full text-sm font-medium hover:bg-gray-200 flex-1"
+                  >
+                    Play Again
+                  </AceternityButton>
+                  <AceternityButton 
+                    onClick={onClose}
+                    className="bg-black text-white px-4 py-2 rounded-full text-sm font-medium hover:bg-gray-800 flex-1"
+                  >
+                    Close
+                  </AceternityButton>
+                </div>
               </div>
             </div>
           </motion.div>

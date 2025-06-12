@@ -8,7 +8,7 @@ import { motion } from 'motion/react'
 
 function GameContent() {
   const searchParams = useSearchParams()
-  const challengeId = searchParams.get('challengeId') || undefined
+  const challengeId = searchParams?.get('challengeId') || undefined
 
   return (
     <ButtonGame 

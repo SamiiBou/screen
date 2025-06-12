@@ -129,8 +129,8 @@ export const ChallengesProvider = ({ children }: { children: ReactNode }) => {
   // Préchargement en arrière-plan
   const preloadChallenge = useCallback(async (id: string): Promise<Challenge | null> => {
     // Si déjà en cours de chargement, retourner la promesse existante
-    if (loadingRef.current[id]) {
-      return loadingRef.current[id]
+    if (id in loadingRef.current) {
+      return await loadingRef.current[id]
     }
 
     // Si en cache et récent, ne rien faire

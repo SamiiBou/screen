@@ -7,7 +7,24 @@ import { apiService, LeaderboardEntry } from '@/utils/api'
 
 export default function ChallengeLeaderboardPage() {
   const params = useParams()
-  const challengeId = params.challengeId as string
+  const challengeId = params?.challengeId as string
+
+  // Early return if no challengeId
+  if (!challengeId) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center">
+        <div className="text-center text-white">
+          <div className="text-2xl font-semibold mb-4">Invalid Challenge</div>
+          <Link 
+            href="/mode-selection" 
+            className="text-purple-200 hover:text-white underline"
+          >
+            ← Back to Mode Selection
+          </Link>
+        </div>
+      </div>
+    )
+  }
 
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([])
   const [challenge, setChallenge] = useState<any>(null)

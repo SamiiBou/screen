@@ -15,6 +15,12 @@ export interface IUser extends Document {
   minikitVerificationLevel?: string
   worldIdNullifierHash?: string
   
+  // Human Verification data
+  humanVerified: boolean
+  humanVerifiedAt?: Date
+  humanVerificationNullifier?: string
+  tokenMultiplier: number
+  
   // Authentication data
   lastLogin: Date
   lastWalletSignature?: string
@@ -22,6 +28,9 @@ export interface IUser extends Document {
   // Game data
   bestTime: number
   totalChallengesPlayed: number
+  
+  // HODL Token balance
+  hodlTokenBalance: number
   
   createdAt: Date
   updatedAt: Date
@@ -89,6 +98,23 @@ const UserSchema: Schema = new Schema({
     trim: true
   },
   
+  // Human Verification data
+  humanVerified: {
+    type: Boolean,
+    default: false
+  },
+  humanVerifiedAt: {
+    type: Date
+  },
+  humanVerificationNullifier: {
+    type: String,
+    trim: true
+  },
+  tokenMultiplier: {
+    type: Number,
+    default: 1
+  },
+  
   // Authentication data
   lastLogin: {
     type: Date,
@@ -107,6 +133,13 @@ const UserSchema: Schema = new Schema({
   totalChallengesPlayed: {
     type: Number,
     default: 0
+  },
+  
+  // HODL Token balance
+  hodlTokenBalance: {
+    type: Number,
+    default: 5, // Initialize with 5 tokens
+    min: 0
   }
 }, {
   timestamps: true
@@ -131,8 +164,12 @@ UserSchema.methods.getPublicProfile = function() {
     displayName: this.displayName,
     avatar: this.avatar,
     verified: this.verified,
+    humanVerified: this.humanVerified,
+    humanVerifiedAt: this.humanVerifiedAt,
+    tokenMultiplier: this.tokenMultiplier,
     bestTime: this.bestTime,
     totalChallengesPlayed: this.totalChallengesPlayed,
+    hodlTokenBalance: this.hodlTokenBalance,
     createdAt: this.createdAt
   }
 }

@@ -1,7 +1,8 @@
 'use client'
 
-import React, { ReactNode } from 'react'
-import WalletAuth from './WalletAuth'
+import React, { ReactNode, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { motion } from 'motion/react'
 import { useAuth } from '@/contexts/AuthContext'
 
 interface AuthGateProps {
@@ -9,55 +10,38 @@ interface AuthGateProps {
 }
 
 const AuthGate: React.FC<AuthGateProps> = ({ children }) => {
-  const { isAuthenticated, isLoading, login } = useAuth()
+  const { isAuthenticated, isLoading } = useAuth()
+  const router = useRouter()
 
-  const handleAuthSuccess = (userData: any) => {
-    console.log('🎉 Authentication successful in AuthGate:', userData)
-    login(userData)
-  }
+  // Redirect to our beautiful auth page if not authenticated
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      router.push('/auth')
+    }
+  }, [isAuthenticated, isLoading, router])
 
-  const handleAuthError = (error: any) => {
-    console.error('❌ Authentication error in AuthGate:', error)
-  }
-
-  // Show loader during authentication verification
+  // Show elegant white loader during authentication verification
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 to-black">
-        <div className="text-center">
-          <div className="inline-block w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mb-4"></div>
-          <p className="text-white">Verifying authentication...</p>
-        </div>
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <motion.div
+          className="w-8 h-8 border-2 border-black border-t-transparent rounded-full"
+          animate={{ rotate: 360 }}
+          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+        />
       </div>
     )
   }
 
-  // If user is not authenticated, show sign in page
+  // If user is not authenticated, redirect happens in useEffect
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 to-black">
-        <div className="w-full max-w-md px-6">
-          {/* Logo/Header */}
-          <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold text-white mb-2">Button Game</h1>
-            <p className="text-gray-300">Connect your World wallet to continue</p>
-          </div>
-          
-          {/* Authentication Component */}
-          <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl p-8 border border-gray-700">
-            <WalletAuth 
-              onAuthSuccess={handleAuthSuccess}
-              onAuthError={handleAuthError}
-            />
-          </div>
-          
-          {/* Footer */}
-          <div className="text-center mt-6">
-            <p className="text-gray-400 text-sm">
-              Powered by Worldcoin MiniKit
-            </p>
-          </div>
-        </div>
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <motion.div
+          className="w-8 h-8 border-2 border-black border-t-transparent rounded-full"
+          animate={{ rotate: 360 }}
+          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+        />
       </div>
     )
   }
