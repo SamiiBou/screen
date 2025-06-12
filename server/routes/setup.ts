@@ -15,8 +15,8 @@ router.post('/init-challenges', async (req, res) => {
     // Créer des challenges de test
     const challenges = [
       {
-        title: "🚀 Challenge Débutant",
-        description: "Perfect pour commencer ! Tenez le bouton le plus longtemps possible.",
+        title: "🚀 Beginner Challenge",
+        description: "Perfect to get started! Hold the button as long as possible.",
         startDate: new Date(now.getTime() - 60 * 60 * 1000), // Commencé il y a 1h
         endDate: tomorrow,
         maxParticipants: 100,
@@ -24,8 +24,8 @@ router.post('/init-challenges', async (req, res) => {
         status: 'active'
       },
       {
-        title: "💎 Challenge Élite",
-        description: "Pour les vrais champions ! Défis anti-triche intensifiés.",
+        title: "💎 Elite Challenge",
+        description: "For true champions! Intensified anti-cheat defenses.",
         startDate: now,
         endDate: new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000), // 3 jours
         maxParticipants: 50,
@@ -33,8 +33,8 @@ router.post('/init-challenges', async (req, res) => {
         status: 'active'
       },
       {
-        title: "🏆 Grand Challenge Hebdomadaire",
-        description: "Le challenge ultime avec la plus grosse cagnotte !",
+        title: "🏆 Grand Weekly Challenge",
+        description: "The ultimate challenge with the biggest jackpot!",
         startDate: now,
         endDate: nextWeek,
         maxParticipants: 1000,
@@ -42,8 +42,8 @@ router.post('/init-challenges', async (req, res) => {
         status: 'active'
       },
       {
-        title: "⚡ Challenge Flash",
-        description: "Challenge rapide de 6 heures seulement !",
+        title: "⚡ Flash Challenge",
+        description: "Quick 6-hour challenge only!",
         startDate: now,
         endDate: new Date(now.getTime() + 6 * 60 * 60 * 1000), // 6 heures
         maxParticipants: 200,
@@ -51,8 +51,8 @@ router.post('/init-challenges', async (req, res) => {
         status: 'active'
       },
       {
-        title: "🌟 Challenge du Weekend",
-        description: "Challenge spécial weekend avec bonus !",
+        title: "🌟 Weekend Challenge",
+        description: "Special weekend challenge with bonus!",
         startDate: new Date(now.getTime() + 2 * 60 * 60 * 1000), // Dans 2h
         endDate: new Date(now.getTime() + 2 * 24 * 60 * 60 * 1000), // 2 jours
         maxParticipants: 300,
@@ -64,25 +64,25 @@ router.post('/init-challenges', async (req, res) => {
     const createdChallenges = await Challenge.insertMany(challenges)
 
     res.json({
-      message: `${createdChallenges.length} challenges créés avec succès`,
+      message: `${createdChallenges.length} challenges created successfully`,
       challenges: createdChallenges
     })
   } catch (error: any) {
-    console.error('Erreur création challenges:', error)
+    console.error('Challenge creation error:', error)
     
     // Plus de détails sur l'erreur
     if (error.name === 'ValidationError') {
       const validationErrors = Object.values(error.errors).map((err: any) => err.message)
       return res.status(400).json({ 
-        message: 'Erreur de validation', 
+        message: 'Validation error', 
         errors: validationErrors,
         details: error.message
       })
     }
     
     res.status(500).json({ 
-      message: 'Erreur serveur lors de la création',
-      error: error.message || 'Erreur inconnue'
+      message: 'Server error during creation',
+      error: error.message || 'Unknown error'
     })
   }
 })
@@ -101,8 +101,8 @@ router.get('/challenges-status', async (req, res) => {
       completed: completedChallenges
     })
   } catch (error) {
-    console.error('Erreur status challenges:', error)
-    res.status(500).json({ message: 'Erreur serveur' })
+    console.error('Challenge status error:', error)
+    res.status(500).json({ message: 'Server error' })
   }
 })
 

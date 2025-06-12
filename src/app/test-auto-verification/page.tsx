@@ -21,45 +21,45 @@ export default function TestAutoVerificationPage() {
         <div className="max-w-4xl mx-auto">
           {/* Header */}
           <div className="text-center mb-12">
-            <h1 className="text-4xl font-bold mb-4">Test Vérification Automatique</h1>
+            <h1 className="text-4xl font-bold mb-4">Automatic Verification Test</h1>
             <p className="text-gray-300 text-lg">
-              Démonstration du système de vérification humaine automatique
+              Demonstration of the automatic human verification system
             </p>
           </div>
 
           {/* Status Dashboard */}
           <div className="bg-gray-800/50 rounded-lg p-6 mb-8">
-            <h2 className="text-2xl font-semibold mb-4">Statut Actuel</h2>
+            <h2 className="text-2xl font-semibold mb-4">Current Status</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <span>Statut de vérification:</span>
+                  <span>Verification status:</span>
                   <span className={isVerified ? 'text-green-400' : 'text-red-400'}>
-                    {isVerified ? '✅ Vérifié' : '❌ Non vérifié'}
+                    {isVerified ? '✅ Verified' : '❌ Not verified'}
                   </span>
                 </div>
                 
                 {isVerified && verificationData && (
                   <>
                     <div className="flex items-center justify-between">
-                      <span>Multiplicateur de tokens:</span>
+                      <span>Token multiplier:</span>
                       <span className="text-blue-400">
                         {verificationData.tokenMultiplier}x
                       </span>
                     </div>
                     
                     <div className="flex items-center justify-between">
-                      <span>Challenges humains:</span>
+                      <span>Human challenges:</span>
                       <span className="text-green-400">
-                        {verificationData.benefits?.humanOnlyChallenges ? '✅ Activé' : '❌ Désactivé'}
+                        {verificationData.benefits?.humanOnlyChallenges ? '✅ Enabled' : '❌ Disabled'}
                       </span>
                     </div>
                     
                     {verificationData.humanVerifiedAt && (
                       <div className="flex items-center justify-between">
-                        <span>Vérifié le:</span>
+                        <span>Verified on:</span>
                         <span className="text-gray-300 text-sm">
-                          {new Date(verificationData.humanVerifiedAt).toLocaleDateString('fr-FR')}
+                          {new Date(verificationData.humanVerifiedAt).toLocaleDateString('en-US')}
                         </span>
                       </div>
                     )}
@@ -72,14 +72,14 @@ export default function TestAutoVerificationPage() {
                   onClick={handleForceModal}
                   className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
                 >
-                  Forcer l'affichage du modal
+                  Force modal display
                 </button>
                 
                 <button
                   onClick={handleRefreshStatus}
                   className="w-full px-4 py-2 bg-gray-600 hover:bg-gray-700 rounded-lg transition-colors"
                 >
-                  Rafraîchir le statut
+                  Refresh status
                 </button>
               </div>
             </div>
@@ -87,14 +87,14 @@ export default function TestAutoVerificationPage() {
 
           {/* How it works */}
           <div className="bg-gray-800/50 rounded-lg p-6 mb-8">
-            <h2 className="text-2xl font-semibold mb-4">Comment ça fonctionne</h2>
+            <h2 className="text-2xl font-semibold mb-4">How it works</h2>
             <div className="space-y-4">
               <div className="flex items-start gap-3">
                 <div className="text-blue-400 font-mono text-sm">1.</div>
                 <div>
-                  <h4 className="font-medium mb-1">Détection automatique</h4>
+                  <h4 className="font-medium mb-1">Automatic detection</h4>
                   <p className="text-gray-300 text-sm">
-                    Le système détecte automatiquement si l'utilisateur est connecté et vérifie son statut de vérification humaine.
+                    The system automatically detects if the user is logged in and verifies their human verification status.
                   </p>
                 </div>
               </div>
@@ -102,9 +102,9 @@ export default function TestAutoVerificationPage() {
               <div className="flex items-start gap-3">
                 <div className="text-blue-400 font-mono text-sm">2.</div>
                 <div>
-                  <h4 className="font-medium mb-1">Délai intelligent</h4>
+                  <h4 className="font-medium mb-1">Smart delay</h4>
                   <p className="text-gray-300 text-sm">
-                    Si l'utilisateur n'est pas vérifié, le modal s'affiche après un délai de 2 secondes pour ne pas être intrusif.
+                    If the user is not verified, the modal appears after a 2-second delay to avoid being intrusive.
                   </p>
                 </div>
               </div>
@@ -112,9 +112,9 @@ export default function TestAutoVerificationPage() {
               <div className="flex items-start gap-3">
                 <div className="text-blue-400 font-mono text-sm">3.</div>
                 <div>
-                  <h4 className="font-medium mb-1">Une seule fois par session</h4>
+                  <h4 className="font-medium mb-1">Once per session</h4>
                   <p className="text-gray-300 text-sm">
-                    Le modal ne s'affiche qu'une seule fois par session pour ne pas harceler l'utilisateur.
+                    The modal only appears once per session to avoid harassing the user.
                   </p>
                 </div>
               </div>
@@ -122,9 +122,9 @@ export default function TestAutoVerificationPage() {
               <div className="flex items-start gap-3">
                 <div className="text-blue-400 font-mono text-sm">4.</div>
                 <div>
-                  <h4 className="font-medium mb-1">Réactivation intelligente</h4>
+                  <h4 className="font-medium mb-1">Smart reactivation</h4>
                   <p className="text-gray-300 text-sm">
-                    Si l'utilisateur se déconnecte puis se reconnecte, le système se réactive pour les nouveaux utilisateurs.
+                    If the user logs out and then logs back in, the system reactivates for new users.
                   </p>
                 </div>
               </div>
@@ -133,15 +133,15 @@ export default function TestAutoVerificationPage() {
 
           {/* Test Section */}
           <div className="bg-gray-800/50 rounded-lg p-6 mb-8">
-            <h2 className="text-2xl font-semibold mb-4">Test des Composants</h2>
+            <h2 className="text-2xl font-semibold mb-4">Component Testing</h2>
             <p className="text-gray-300 mb-6">
-              Ces composants utilisent maintenant le contexte global automatiquement :
+              These components now automatically use the global context:
             </p>
             
             <div className="space-y-6">
               {/* Banner */}
               <div>
-                <h3 className="text-lg font-medium mb-3">Bannière avec contexte global</h3>
+                <h3 className="text-lg font-medium mb-3">Banner with global context</h3>
                 <HumanVerificationButton
                   variant="banner"
                   onVerificationSuccess={(data) => {
@@ -152,7 +152,7 @@ export default function TestAutoVerificationPage() {
               
               {/* Card */}
               <div>
-                <h3 className="text-lg font-medium mb-3">Carte avec contexte global</h3>
+                <h3 className="text-lg font-medium mb-3">Card with global context</h3>
                 <div className="max-w-sm">
                   <HumanVerificationButton
                     variant="card"
@@ -165,7 +165,7 @@ export default function TestAutoVerificationPage() {
               
               {/* Buttons */}
               <div>
-                <h3 className="text-lg font-medium mb-3">Boutons avec contexte global</h3>
+                <h3 className="text-lg font-medium mb-3">Buttons with global context</h3>
                 <div className="flex gap-4">
                   <HumanVerificationButton
                     variant="button"
@@ -197,7 +197,7 @@ export default function TestAutoVerificationPage() {
           <div className="bg-gray-800/50 rounded-lg p-6">
             <h2 className="text-2xl font-semibold mb-4">Configuration</h2>
             <p className="text-gray-300 mb-4">
-              Le provider est configuré dans le layout principal avec ces paramètres :
+              The provider is configured in the main layout with these parameters:
             </p>
             <div className="bg-gray-900 rounded-lg p-4 font-mono text-sm">
               <div className="text-gray-400">// src/app/layout.tsx</div>
@@ -210,8 +210,8 @@ export default function TestAutoVerificationPage() {
             </div>
             
             <div className="mt-4 space-y-2 text-sm">
-              <div><strong>autoShowModal:</strong> Affiche automatiquement le modal pour les non-vérifiés</div>
-              <div><strong>delayMs:</strong> Délai de 2 secondes avant d'afficher le modal</div>
+              <div><strong>autoShowModal:</strong> Automatically display modal for non-verified users</div>
+              <div><strong>delayMs:</strong> 2-second delay before displaying modal</div>
             </div>
           </div>
         </div>

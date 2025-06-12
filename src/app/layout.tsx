@@ -9,8 +9,8 @@ import { HumanVerificationProvider } from '@/components/HumanVerificationProvide
 export const dynamic = 'force-dynamic'
 
 export const metadata: Metadata = {
-  title: 'Button Endurance Game - Le Dernier Survivant',
-  description: 'Le dernier à garder son doigt sur le bouton gagne. Testez votre endurance et relevez les défis !',
+  title: 'Button Endurance Game - The Last Survivor',
+  description: 'The last one to keep their finger on the button wins. Test your endurance and take on the challenges!',
   icons: {
     icon: '/favicon.ico',
   },

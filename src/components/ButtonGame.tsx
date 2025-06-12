@@ -704,10 +704,10 @@ export default function ButtonGame({ challengeId }: ButtonGameProps) {
           lineHeight: '1'
         }}
       >
-        {!canPlay && phase === 'start' ? 'DÉJÀ JOUÉ' :
-         phase === 'over' ? 'FIN' : 
+        {!canPlay && phase === 'start' ? 'ALREADY PLAYED' :
+         phase === 'over' ? 'END' : 
          phase === 'start' ? 'START' :
-         waiting ? 'APPUIE!' : 'TIENS'}
+         waiting ? 'PRESS!' : 'HOLD'}
       </motion.button>
 
       {/* Instructions */}
@@ -733,7 +733,7 @@ export default function ButtonGame({ challengeId }: ButtonGameProps) {
               margin: 0,
               textAlign: 'center'
             }}>
-              {canPlay ? 'Appuie pour commencer' : 'Tu as déjà participé à ce challenge'}
+              {canPlay ? 'Press to start' : 'You already participated in this challenge'}
             </p>
           </motion.div>
         )}
@@ -772,14 +772,14 @@ export default function ButtonGame({ challengeId }: ButtonGameProps) {
                 color: '#000000',
                 margin: '0 0 12px 0'
               }}>
-                Partie terminée
+                Game Over
               </h2>
               <p style={{
                 fontSize: '16px',
                 color: '#666666',
                 margin: '0 0 6px 0'
               }}>
-                Temps de survie
+                Survival Time
               </p>
               <p style={{
                 fontSize: '56px',
@@ -810,14 +810,14 @@ export default function ButtonGame({ challengeId }: ButtonGameProps) {
                   color: '#666',
                   textAlign: 'center'
                 }}>
-                  Une seule tentative autorisée
+                  Only one attempt allowed
                 </div>
                 
                 <AceternityButton 
                   onClick={() => router.push('/')}
                   className="bg-gray-100 text-black px-6 py-3 rounded-full text-base font-semibold hover:bg-gray-200 w-full"
                 >
-                  Retour à l'accueil
+                  Back to Home
                 </AceternityButton>
               </div>
             </div>

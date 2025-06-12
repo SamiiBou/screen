@@ -144,7 +144,7 @@ router.get('/user/:userId', async (req, res) => {
 
     const user = await User.findById(userId).select('username bestTime totalChallengesPlayed')
     if (!user) {
-      return res.status(404).json({ message: 'Utilisateur non trouvé' })
+      return res.status(404).json({ message: 'User not found' })
     }
 
     const userParticipations = await Participation.find({ userId })

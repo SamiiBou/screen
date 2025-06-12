@@ -568,7 +568,7 @@ export default function QuickGame({ onClose }: QuickGameProps) {
             exit={{ opacity: 0, y: -30 }}
             style={{
               position: 'absolute',
-              top: `calc(${pos.y}% + 80px)`,
+              top: `calc(${pos.y}% + 85px)`,
               left: '28%',
               transform: 'translateX(-50%)',
               zIndex: 70,
