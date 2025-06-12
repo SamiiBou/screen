@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import './globals.css'
-// import ErudaDebugger from '@/components/ErudaDebugger'
+import ErudaDebugger from '@/components/ErudaDebugger'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { ChallengesProvider } from '@/contexts/ChallengesContext'
 import { MiniKitProvider } from '@worldcoin/minikit-js/minikit-provider'
@@ -28,7 +28,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="font-sf-pro antialiased">
-        {/* <ErudaDebugger /> */}
+        <ErudaDebugger />
         <MiniKitProvider>
           <AuthProvider>
             <ChallengesProvider>
