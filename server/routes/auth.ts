@@ -1,7 +1,7 @@
 import express from 'express'
 import crypto from 'crypto'
 import jwt from 'jsonwebtoken'
-import { verifySiweMessage } from '@worldcoin/minikit-js'
+import { verifySiweMessage, verifyCloudProof } from '@worldcoin/minikit-js'
 import User, { IUser } from '../models/User'
 import { auth, AuthRequest } from '../middleware/auth'
 
@@ -393,7 +393,7 @@ router.get('/stats', async (req, res) => {
 // World ID verification endpoint
 router.post('/worldcoin-verify', async (req, res, next) => {
   try {
-    const { proof, merkle_root, nullifier_hash, action, signal, app_id } = req.body
+    const { proof, merkle_root, nullifier_hash, verification_level, action, signal, app_id } = req.body
 
     console.log('🔍 World ID verification data:', req.body)
 
@@ -430,23 +430,40 @@ router.post('/worldcoin-verify', async (req, res, next) => {
       })
     }
 
-    // TODO: Ici, en production, vous devriez vérifier la preuve avec l'API World ID
-    // const { verifyCloudProof } = require('@worldcoin/minikit-js')
-    // const verifyRes = await verifyCloudProof(
-    //   { proof, merkle_root, nullifier_hash },
-    //   app_id,
-    //   action,
-    //   signal
-    // )
-    // if (!verifyRes.success) {
-    //   return res.status(400).json({
-    //     status: 'error',
-    //     message: 'Invalid World ID proof',
-    //   })
-    // }
+    // VÉRIFICATION RÉELLE avec l'API World ID
+    console.log('🔐 Verifying proof with World ID API...')
+    
+    try {
+      const verifyRes = await verifyCloudProof(
+        { 
+          proof, 
+          merkle_root, 
+          nullifier_hash,
+          verification_level: verification_level || 'orb'
+        },
+        app_id,
+        action,
+        signal
+      )
 
-    // Simuler la vérification réussie pour le développement
-    console.log('✅ World ID verification simulated as successful')
+      if (!verifyRes.success) {
+        console.error('❌ World ID proof verification failed:', verifyRes)
+        return res.status(400).json({
+          status: 'error',
+          message: 'Invalid World ID proof',
+          details: verifyRes
+        })
+      }
+
+      console.log('✅ World ID proof verified successfully')
+    } catch (verifyError: any) {
+      console.error('❌ Error verifying World ID proof:', verifyError)
+      return res.status(500).json({
+        status: 'error',
+        message: 'Failed to verify World ID proof',
+        error: verifyError.message
+      })
+    }
 
     res.status(200).json({
       status: 'success',
