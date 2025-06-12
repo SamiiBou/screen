@@ -6,6 +6,8 @@ import { ChallengesProvider } from '@/contexts/ChallengesContext'
 import { MiniKitProvider } from '@worldcoin/minikit-js/minikit-provider'
 import { HumanVerificationProvider } from '@/components/HumanVerificationProvider'
 
+export const dynamic = 'force-dynamic'
+
 export const metadata: Metadata = {
   title: 'Button Endurance Game - Le Dernier Survivant',
   description: 'Le dernier à garder son doigt sur le bouton gagne. Testez votre endurance et relevez les défis !',
