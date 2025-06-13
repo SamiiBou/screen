@@ -29,7 +29,7 @@ const PORT = Number(process.env.PORT) || 8080
 // Fonction pour distribuer des tokens à tous les utilisateurs
 async function distributeTokensToAllUsers() {
   try {
-    console.log('🎁 [CRON] Starting automatic token distribution....')
+    console.log('🎁 [CRON] Starting automatic token distribution.....')
     
     const tokensToAdd = 0.5
     const result = await User.updateMany(
