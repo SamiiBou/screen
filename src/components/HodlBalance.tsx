@@ -87,11 +87,26 @@ export default function HodlBalance({ className = '' }: HodlBalanceProps) {
       console.log('📄 Génération du voucher...')
       const voucherResponse = await apiService.generateHodlVoucher()
 
+      console.log('📄 Voucher reçu:', voucherResponse)
       setClaimData(voucherResponse)
 
-      // 2. Préparer la transaction MiniKit
+      // 2. Préparer la transaction MiniKit avec toutes les options de debugging
       console.log('🚀 Envoi de la transaction...')
-      const { finalPayload } = await MiniKit.commandsAsync.sendTransaction({
+      console.log('📋 Paramètres de transaction:', {
+        address: HODL_DISTRIBUTOR_ADDRESS,
+        functionName: 'claim',
+        args: [
+          [
+            voucherResponse.voucher.to,
+            voucherResponse.voucher.amount,
+            voucherResponse.voucher.nonce,
+            voucherResponse.voucher.deadline,
+          ],
+          voucherResponse.signature,
+        ]
+      })
+
+      const transactionPayload = {
         transaction: [
           {
             address: HODL_DISTRIBUTOR_ADDRESS,
@@ -108,10 +123,27 @@ export default function HodlBalance({ className = '' }: HodlBalanceProps) {
             ],
           },
         ],
-      })
+      }
+
+      console.log('📡 Payload complet:', transactionPayload)
+
+      const result = await MiniKit.commandsAsync.sendTransaction(transactionPayload)
+      
+      console.log('📱 Résultat MiniKit brut:', result)
+      console.log('📱 CommandPayload:', result.commandPayload)
+      console.log('📱 FinalPayload:', result.finalPayload)
+
+      const { finalPayload } = result
 
       if (finalPayload.status === 'error') {
-        throw new Error('Transaction failed')
+        console.error('❌ Erreur détaillée:', finalPayload)
+        const errorPayload = finalPayload as any
+        throw new Error(`Transaction failed: ${errorPayload.message || errorPayload.errorMessage || 'Unknown error'}`)
+      }
+
+      if (!finalPayload.transaction_id) {
+        console.error('❌ Pas de transaction_id reçu:', finalPayload)
+        throw new Error('Transaction failed: No transaction ID received')
       }
 
       console.log('✅ Transaction envoyée:', finalPayload.transaction_id)

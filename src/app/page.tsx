@@ -225,6 +225,33 @@ function HomePage() {
                   </p>
                 </div>
               )}
+              
+              {/* Telegram Join Button */}
+              <motion.a
+                href="https://t.me/+P6wLDBy5fBExMDZk"
+                target="_blank"
+                rel="noopener noreferrer"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className="flex items-center space-x-2 px-4 py-2 bg-white/70 backdrop-blur-sm border border-gray-200/50 rounded-full text-sm font-medium text-gray-700 hover:bg-white/90 hover:border-gray-300/60 transition-all duration-300 shadow-sm hover:shadow-md"
+              >
+                <svg 
+                  width="16" 
+                  height="16" 
+                  viewBox="0 0 24 24" 
+                  fill="none" 
+                  className="text-[#0088cc]"
+                >
+                  <path 
+                    d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-.38.24-1.67 1.11-.6.4-1.04.61-1.3.61-.37-.01-1.11-.21-1.65-.38-.67-.21-1.2-.32-1.15-.68.02-.18.27-.37.74-.56 2.92-1.27 4.86-2.11 5.83-2.51 2.15-.9 2.6-1.06 2.89-1.06.06 0 .21.01.3.09.08.06.1.14.11.19-.01.06-.01.24-.05.38z" 
+                    fill="currentColor"
+                  />
+                </svg>
+                <span>Join us</span>
+              </motion.a>
             </div>
           </motion.div>
 
