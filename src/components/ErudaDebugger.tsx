@@ -4,10 +4,14 @@ import { useEffect } from 'react'
 
 export default function ErudaDebugger() {
   useEffect(() => {
-    // Activer Eruda TOUJOURS (suppression des conditions restrictives)
+    // Activer Eruda uniquement en dev ou avec le paramètre debug=1
     const isDev = process.env.NODE_ENV === 'development'
     const hasDebugParam = typeof window !== 'undefined' && 
       new URLSearchParams(window.location.search).get('debug') === '1'
+
+    if (!isDev && !hasDebugParam) {
+      return
+    }
 
     // Détection World App / WebView mobile
     const ua = typeof navigator !== 'undefined' ? navigator.userAgent || '' : ''
