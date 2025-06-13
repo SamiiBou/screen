@@ -173,9 +173,9 @@ function HomePage() {
               />
             </motion.div>
             
-            {/* Add Challenge dans le header */}
-            {isAuthenticated && user?.walletAddress === '0x21bee69e692ceb4c02b66c7a45620684904ba395' && (
-              <div className="flex items-center gap-4">
+            {/* Add Challenge et Telegram Button dans le header */}
+            <div className="flex items-center gap-4">
+              {isAuthenticated && user?.walletAddress === '0x21bee69e692ceb4c02b66c7a45620684904ba395' && (
                 <AddChallengeForm onSuccess={async () => {
                   setLoading(true)
                   try {
@@ -195,8 +195,35 @@ function HomePage() {
                     setLoading(false)
                   }
                 }} />
-              </div>
-            )}
+              )}
+              
+              {/* Telegram Join Button */}
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                whileHover={{ scale: 1.02, y: -1 }}
+                whileTap={{ scale: 0.98 }}
+                className="social-btn telegram-btn"
+                onClick={() => window.open('https://t.me/+P6wLDBy5fBExMDZk', '_blank')}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '5px',
+                  borderRadius: '6px',
+                  padding: '0.25rem 0.5rem',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  fontWeight: '500',
+                  backgroundColor: 'rgba(0, 136, 204, 0.08)',
+                  border: '1px solid rgba(0, 136, 204, 0.2)',
+                  color: '#0088cc'
+                }}
+              >
+                <FaTelegramPlane size={18} />
+                <span style={{ fontSize: '0.8rem', lineHeight: 1 }}>Join Us</span>
+              </motion.div>
+            </div>
           </div>
         </div>
       </motion.nav>
@@ -227,32 +254,6 @@ function HomePage() {
                 </div>
               )}
               
-              {/* Telegram Join Button */}
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 }}
-                whileHover={{ scale: 1.02, y: -1 }}
-                whileTap={{ scale: 0.98 }}
-                className="social-btn telegram-btn"
-                onClick={() => window.open('https://t.me/+P6wLDBy5fBExMDZk', '_blank')}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '5px',
-                  borderRadius: '6px',
-                  padding: '0.25rem 0.5rem',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s',
-                  fontWeight: '500',
-                  backgroundColor: 'rgba(0, 136, 204, 0.08)',
-                  border: '1px solid rgba(0, 136, 204, 0.2)',
-                  color: '#0088cc'
-                }}
-              >
-                <FaTelegramPlane size={18} />
-                <span style={{ fontSize: '0.8rem', lineHeight: 1 }}>Join Us</span>
-              </motion.div>
             </div>
           </motion.div>
 
