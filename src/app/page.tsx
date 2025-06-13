@@ -12,6 +12,7 @@ import AddChallengeForm from '@/components/AddChallengeForm'
 import QuickGame from '@/components/QuickGame'
 import HodlBalance from '@/components/HodlBalance'
 import Image from 'next/image'
+import { FaTelegramPlane } from 'react-icons/fa'
 
 interface Challenge {
   _id: string
@@ -227,27 +228,31 @@ function HomePage() {
               )}
               
               {/* Telegram Join Button */}
-              <motion.a
-                href="https://t.me/+P6wLDBy5fBExMDZk"
-                target="_blank"
-                rel="noopener noreferrer"
+              <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3 }}
                 whileHover={{ scale: 1.02, y: -1 }}
                 whileTap={{ scale: 0.98 }}
-                className="flex items-center gap-2 px-4 py-2 bg-[#0088cc]/8 border border-[#0088cc]/20 rounded-lg text-sm font-medium text-[#0088cc] hover:bg-[#0088cc]/15 transition-all duration-200 shadow-sm hover:shadow-md"
+                className="social-btn telegram-btn"
+                onClick={() => window.open('https://t.me/+P6wLDBy5fBExMDZk', '_blank')}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '5px',
+                  borderRadius: '6px',
+                  padding: '0.25rem 0.5rem',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  fontWeight: '500',
+                  backgroundColor: 'rgba(0, 136, 204, 0.08)',
+                  border: '1px solid rgba(0, 136, 204, 0.2)',
+                  color: '#0088cc'
+                }}
               >
-                <svg 
-                  width="18" 
-                  height="18" 
-                  viewBox="0 0 24 24" 
-                  fill="currentColor"
-                >
-                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-.38.24-1.67 1.11-.6.4-1.04.61-1.3.61-.37-.01-1.11-.21-1.65-.38-.67-.21-1.2-.32-1.15-.68.02-.18.27-.37.74-.56 2.92-1.27 4.86-2.11 5.83-2.51 2.15-.9 2.6-1.06 2.89-1.06.06 0 .21.01.3.09.08.06.1.14.11.19-.01.06-.01.24-.05.38z" />
-                </svg>
-                <span>Join us</span>
-              </motion.a>
+                <FaTelegramPlane size={18} />
+                <span style={{ fontSize: '0.8rem', lineHeight: 1 }}>Join Us</span>
+              </motion.div>
             </div>
           </motion.div>
 
