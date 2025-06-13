@@ -13,7 +13,7 @@ const DOMAIN = {
   name: 'Distributor',
   version: '1',
   chainId: 480, // World Chain
-  verifyingContract: '25567dE6E171936aCB95698904634DA0a548C2' // Adresse du distributor
+  verifyingContract: '0x25567dE6E171936aCB95698904634DA0a548C2' // Adresse du distributor
 }
 
 const TYPES = {
