@@ -47,23 +47,32 @@ router.get('/challenge/:challengeId', async (req, res) => {
             return res.status(404).json({ message: 'Challenge non trouvé' });
         }
         const skip = (Number(page) - 1) * Number(limit);
-        const participations = await Participation_1.default.find({ challengeId })
+        
+        // MODIFICATION: Ne récupérer que les participations avec paiement complété
+        // Pour les challenges payants, filtrer par paymentStatus = 'completed'
+        // Pour les challenges gratuits, tous les paiements sont 'completed' par défaut
+        const participationQuery = challenge.participationPrice > 0 
+            ? { challengeId, paymentStatus: 'completed' }
+            : { challengeId };
+            
+        const participations = await Participation_1.default.find(participationQuery)
             .populate('userId', 'username')
             .sort({ rank: 1 })
             .skip(skip)
             .limit(Number(limit));
-        const totalParticipants = await Participation_1.default.countDocuments({ challengeId });
+        const totalParticipants = await Participation_1.default.countDocuments(participationQuery);
         const leaderboard = participations.map(participation => {
             // Log pour debug
             console.log('🔍 Participation data:', {
-                username: participation.userId.username,
+                username: (participation.userId).username,
                 timeHeld: participation.timeHeld,
                 challengesCompleted: participation.challengesCompleted,
-                rank: participation.rank
+                rank: participation.rank,
+                paymentStatus: participation.paymentStatus
             });
             return {
                 rank: participation.rank,
-                username: participation.userId.username,
+                username: (participation.userId).username,
                 timeHeld: participation.timeHeld,
                 challengesCompleted: participation.challengesCompleted,
                 eliminationReason: participation.eliminationReason,

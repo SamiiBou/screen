@@ -307,17 +307,24 @@ router.post('/initiate-participation-payment', auth_1.auth, async (req, res) => 
         if (challenge.participationPrice <= 0) {
             return res.status(400).json({ error: 'This challenge is free to join' });
         }
-        // Vérifier si l'utilisateur a déjà participé
-        const existingParticipation = await Participation_1.default.findOne({
+        // MODIFICATION: Vérifier si l'utilisateur a déjà une participation COMPLÉTÉE
+        const completedParticipation = await Participation_1.default.findOne({
             userId: req.user._id,
-            challengeId
+            challengeId,
+            paymentStatus: 'completed'
         });
-        if (existingParticipation) {
+        if (completedParticipation) {
             return res.status(400).json({ error: 'You have already participated in this challenge' });
         }
+        // MODIFICATION: Supprimer toute participation pending/failed existante pour permettre une nouvelle tentative
+        await Participation_1.default.deleteMany({
+            userId: req.user._id,
+            challengeId,
+            paymentStatus: { $in: ['pending', 'failed'] }
+        });
         // Générer un ID de référence unique
         const reference = crypto_1.default.randomUUID().replace(/-/g, '');
-        // Créer une participation en attente de paiement
+        // Créer une nouvelle participation en attente de paiement
         const participation = new Participation_1.default({
             userId: req.user._id,
             challengeId,
@@ -780,19 +787,28 @@ router.get('/:challengeId/can-participate', auth_1.auth, async (req, res) => {
                 paymentStatus: 'completed'
             });
             console.log('✅ [CAN-PARTICIPATE DEBUG] Completed participation found:', paidParticipation);
+            // MODIFICATION: Récupérer les participations pending avec une logique plus stricte
             const pendingParticipation = await Participation_1.default.findOne({
                 userId,
                 challengeId,
-                paymentStatus: 'pending'
+                paymentStatus: 'pending',
+                transactionId: { $ne: 'pending' } // Seulement si une transaction est en cours
             });
             console.log('⏳ [CAN-PARTICIPATE DEBUG] Pending participation found:', pendingParticipation);
+            // MODIFICATION: Si une participation failed existe, permettre une nouvelle tentative
+            const failedParticipation = await Participation_1.default.findOne({
+                userId,
+                challengeId,
+                paymentStatus: 'failed'
+            });
+            console.log('❌ [CAN-PARTICIPATE DEBUG] Failed participation found:', failedParticipation);
             const response = {
                 canParticipate: !!paidParticipation && paidParticipation.timeHeld === 0,
-                needsPayment: !paidParticipation && !pendingParticipation,
+                needsPayment: !paidParticipation && !pendingParticipation, // Peut payer si pas de participation completed ni pending avec transaction
                 hasPendingPayment: !!pendingParticipation,
                 hasPaid: !!paidParticipation,
                 participationPrice: challenge.participationPrice,
-                paymentStatus: paidParticipation?.paymentStatus || (pendingParticipation?.paymentStatus || 'none')
+                paymentStatus: paidParticipation?.paymentStatus || (pendingParticipation?.paymentStatus || (failedParticipation?.paymentStatus || 'none'))
             };
             console.log('📊 [CAN-PARTICIPATE DEBUG] Response for PAID challenge:', response);
             res.json(response);
@@ -823,7 +839,16 @@ router.get('/:challengeId/can-participate', auth_1.auth, async (req, res) => {
 });
 async function calculateRankings(challengeId) {
     try {
-        const participations = await Participation_1.default.find({ challengeId })
+        // MODIFICATION: Ne calculer les rangs que pour les participations avec paiement complété
+        const challenge = await Challenge_1.default.findById(challengeId);
+        if (!challenge) {
+            console.error('Challenge not found for ranking calculation');
+            return;
+        }
+        const participationQuery = challenge.participationPrice > 0 
+            ? { challengeId, paymentStatus: 'completed' }
+            : { challengeId };
+        const participations = await Participation_1.default.find(participationQuery)
             .sort({ timeHeld: -1, challengesCompleted: -1, createdAt: 1 });
         for (let i = 0; i < participations.length; i++) {
             await Participation_1.default.findByIdAndUpdate(participations[i]._id, {

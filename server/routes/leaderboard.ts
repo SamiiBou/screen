@@ -52,13 +52,17 @@ router.get('/challenge/:challengeId', async (req, res) => {
 
     const skip = (Number(page) - 1) * Number(limit)
 
-    const participations = await Participation.find({ challengeId })
+    const participationQuery = challenge.participationPrice > 0 
+      ? { challengeId, paymentStatus: 'completed' }
+      : { challengeId }
+
+    const participations = await Participation.find(participationQuery)
       .populate('userId', 'username')
       .sort({ rank: 1 })
       .skip(skip)
       .limit(Number(limit))
 
-    const totalParticipants = await Participation.countDocuments({ challengeId })
+    const totalParticipants = await Participation.countDocuments(participationQuery)
 
     const leaderboard = participations.map(participation => {
       // Log pour debug
@@ -66,7 +70,8 @@ router.get('/challenge/:challengeId', async (req, res) => {
         username: (participation.userId as any).username,
         timeHeld: participation.timeHeld,
         challengesCompleted: participation.challengesCompleted,
-        rank: participation.rank
+        rank: participation.rank,
+        paymentStatus: participation.paymentStatus
       })
       
       return {
