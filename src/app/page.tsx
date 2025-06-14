@@ -9,6 +9,7 @@ import { useChallenges } from '@/contexts/ChallengesContext'
 import { AceternityButton } from '@/components/ui/AceternityButton'
 import AuthGate from '@/components/AuthGate'
 import AddChallengeForm from '@/components/AddChallengeForm'
+import AddDuelChallengeForm from '@/components/AddDuelChallengeForm'
 import QuickGame from '@/components/QuickGame'
 import HodlBalance from '@/components/HodlBalance'
 import Image from 'next/image'
@@ -37,6 +38,7 @@ function HomePage() {
   const [selectedPriceFilter, setSelectedPriceFilter] = useState<number | null>(null)
   const [currentPage, setCurrentPage] = useState(1)
   const [showCompleted, setShowCompleted] = useState(false)
+  const [showDuels, setShowDuels] = useState(false)
   const challengesPerPage = 3
   const navigatingRef = useRef<Record<string, boolean>>({})
   const { user, isAuthenticated } = useAuth()
@@ -85,16 +87,22 @@ function HomePage() {
   useEffect(() => {
     const sourceChallenges = showCompleted ? completedChallenges : activeChallenges
     let filtered = sourceChallenges
+
+    if (showDuels) {
+      filtered = filtered.filter(ch => ch.maxParticipants === 2)
+    } else {
+      filtered = filtered.filter(ch => ch.maxParticipants !== 2)
+    }
     
     if (selectedPriceFilter !== null) {
-      filtered = sourceChallenges.filter(challenge => 
+      filtered = filtered.filter(challenge =>
         challenge.participationPrice === selectedPriceFilter
       )
     }
     
     setFilteredChallenges(filtered)
     setCurrentPage(1) // Reset à la page 1 quand on filtre
-  }, [activeChallenges, completedChallenges, selectedPriceFilter, showCompleted])
+  }, [activeChallenges, completedChallenges, selectedPriceFilter, showCompleted, showDuels])
 
   // Pagination
   const totalPages = Math.ceil(filteredChallenges.length / challengesPerPage)
@@ -189,12 +197,42 @@ function HomePage() {
             {/* Add Challenge et Telegram Button dans le header */}
             <div className="flex items-center gap-4">
               {isAuthenticated && user?.walletAddress === '0x21bee69e692ceb4c02b66c7a45620684904ba395' && (
-                <AddChallengeForm onSuccess={async () => {
-                  setLoading(true)
-                  try {
-                    const [activeResponse, completedResponse] = await Promise.all([
-                      apiService.getActiveChallenges(),
-                      apiService.getCompletedChallenges()
+                showDuels ?
+                  <AddDuelChallengeForm onSuccess={async () => {
+                    setLoading(true)
+                    try {
+                      const [activeResponse, completedResponse] = await Promise.all([
+                        apiService.getActiveChallenges(),
+                        apiService.getCompletedChallenges()
+                      ])
+
+                      const activeChallengesData = activeResponse.challenges || []
+                      const completedChallengesData = completedResponse.challenges || []
+
+                      setActiveChallenges(activeChallengesData)
+                      setCompletedChallenges(completedChallengesData)
+                      setFilteredChallenges(showCompleted ? completedChallengesData : activeChallengesData)
+                      setChallengesList(activeChallengesData)
+
+                      activeChallengesData.slice(0, 3).forEach((challenge: Challenge, index: number) => {
+                        setTimeout(() => {
+                          preloadChallenge(challenge._id).catch(console.error)
+                        }, index * 100)
+                      })
+                    } catch (error) {
+                      setActiveChallenges([])
+                      setCompletedChallenges([])
+                    } finally {
+                      setLoading(false)
+                    }
+                  }} />
+                :
+                  <AddChallengeForm onSuccess={async () => {
+                    setLoading(true)
+                    try {
+                      const [activeResponse, completedResponse] = await Promise.all([
+                        apiService.getActiveChallenges(),
+                        apiService.getCompletedChallenges()
                     ])
                     
                     const activeChallengesData = activeResponse.challenges || []
@@ -205,18 +243,31 @@ function HomePage() {
                     setFilteredChallenges(showCompleted ? completedChallengesData : activeChallengesData)
                     setChallengesList(activeChallengesData)
                     
-                    activeChallengesData.slice(0, 3).forEach((challenge: Challenge, index: number) => {
-                      setTimeout(() => {
-                        preloadChallenge(challenge._id).catch(console.error)
-                      }, index * 100)
-                    })
-                  } catch (error) {
-                    setActiveChallenges([])
-                    setCompletedChallenges([])
-                  } finally {
-                    setLoading(false)
-                  }
-                }} />
+                      activeChallengesData.slice(0, 3).forEach((challenge: Challenge, index: number) => {
+                        setTimeout(() => {
+                          preloadChallenge(challenge._id).catch(console.error)
+                        }, index * 100)
+                      })
+                    } catch (error) {
+                      setActiveChallenges([])
+                      setCompletedChallenges([])
+                    } finally {
+                      setLoading(false)
+                    }
+                  }} />
+              )}
+
+              {isAuthenticated && user?.walletAddress === '0x21bee69e692ceb4c02b66c7a45620684904ba395' && (
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={() => { setShowDuels(false); setSelectedPriceFilter(null); }}
+                    className={`text-xs font-medium ${!showDuels ? 'text-black' : 'text-gray-500'}`}
+                  >Challenges</button>
+                  <button
+                    onClick={() => { setShowDuels(true); setSelectedPriceFilter(null); }}
+                    className={`text-xs font-medium ${showDuels ? 'text-black' : 'text-gray-500'}`}
+                  >1v1</button>
+                </div>
               )}
               
               {/* Telegram Join Button */}
@@ -420,9 +471,9 @@ function HomePage() {
                 <div className="text-center">
                   <p className="text-xs text-gray-500">
                     {selectedPriceFilter !== null ? (
-                      <>Showing {filteredChallenges.length} challenge{filteredChallenges.length !== 1 ? 's' : ''} with {selectedPriceFilter} WLD entry fee</>
+                      <>Showing {filteredChallenges.length} {showDuels ? 'duel' : 'challenge'}{filteredChallenges.length !== 1 ? 's' : ''} with {selectedPriceFilter} WLD entry fee</>
                     ) : (
-                      <>Showing {filteredChallenges.length} challenge{filteredChallenges.length !== 1 ? 's' : ''}</>
+                      <>Showing {filteredChallenges.length} {showDuels ? 'duel' : 'challenge'}{filteredChallenges.length !== 1 ? 's' : ''}</>
                     )}
                   </p>
                 </div>

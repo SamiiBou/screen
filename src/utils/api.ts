@@ -164,6 +164,14 @@ class ApiService {
     return response
   }
 
+  async createDuelChallenge(participationPrice: number) {
+    const response = await this.request('/challenges/create-1v1', {
+      method: 'POST',
+      body: JSON.stringify({ participationPrice })
+    })
+    return response
+  }
+
   async joinChallenge(challengeId: string) {
     return this.request(`/challenges/${challengeId}/participate`, {
       method: 'POST'

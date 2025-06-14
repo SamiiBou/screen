@@ -407,6 +407,42 @@ router.post('/create', auth, async (req: AuthRequest, res) => {
   }
 })
 
+// POST /api/challenges/create-1v1 - Create a 1v1 duel challenge
+router.post('/create-1v1', auth, async (req: AuthRequest, res) => {
+  try {
+    const { participationPrice } = req.body
+    const allowedPrices = [1, 5, 10]
+
+    if (!req.user || req.user.walletAddress.toLowerCase() !== '0x21bee69e692ceb4c02b66c7a45620684904ba395') {
+      return res.status(403).json({ message: 'Unauthorized' })
+    }
+
+    if (!allowedPrices.includes(Number(participationPrice))) {
+      return res.status(400).json({ message: 'Invalid price' })
+    }
+
+    const prizeMap: Record<number, number> = { 1: 1.7, 5: 8.5, 10: 17 }
+
+    const challenge = new Challenge({
+      title: '1v1 Duel',
+      description: `Duel entry ${participationPrice} WLD`,
+      maxParticipants: 2,
+      firstPrize: prizeMap[participationPrice],
+      secondPrize: 0,
+      thirdPrize: 0,
+      participationPrice: participationPrice,
+      status: 'active'
+    })
+
+    await challenge.save()
+
+    res.status(201).json({ message: '1v1 challenge created', challenge })
+  } catch (err) {
+    console.error('Error creating 1v1 challenge:', err)
+    res.status(500).json({ message: 'Server error' })
+  }
+})
+
 // POST /api/challenges/initiate-participation-payment - Initier le paiement de participation
 router.post('/initiate-participation-payment', auth, async (req: AuthRequest, res) => {
   try {
