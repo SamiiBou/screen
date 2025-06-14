@@ -456,7 +456,9 @@ function HomePage() {
                               ? 'bg-gray-400' 
                               : 'bg-emerald-400 status-pulse'
                           }`}></div>
-                          <span className="apple-text-primary text-sm font-medium apple-text-depth">Challenge #{index + 1}</span>
+                          <span className="apple-text-primary text-sm font-medium apple-text-depth">
+                            {showCompleted ? challenge.title : `Challenge #${index + 1}`}
+                          </span>
                           <div className={`px-2 py-0.5 rounded-md ${
                             challenge.status === 'completed'
                               ? 'bg-gray-50'
