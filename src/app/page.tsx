@@ -29,12 +29,14 @@ interface Challenge {
 
 function HomePage() {
   const [activeChallenges, setActiveChallenges] = useState<Challenge[]>([])
+  const [completedChallenges, setCompletedChallenges] = useState<Challenge[]>([])
   const [filteredChallenges, setFilteredChallenges] = useState<Challenge[]>([])
   const [loading, setLoading] = useState(true)
   const [navigatingToChallengeId, setNavigatingToChallengeId] = useState<string | null>(null)
   const [showQuickGame, setShowQuickGame] = useState(false)
   const [selectedPriceFilter, setSelectedPriceFilter] = useState<number | null>(null)
   const [currentPage, setCurrentPage] = useState(1)
+  const [showCompleted, setShowCompleted] = useState(false)
   const challengesPerPage = 3
   const navigatingRef = useRef<Record<string, boolean>>({})
   const { user, isAuthenticated } = useAuth()
@@ -44,16 +46,25 @@ function HomePage() {
   useEffect(() => {
     const loadChallenges = async () => {
       try {
-        const response = await apiService.getActiveChallenges()
-        const challenges = response.challenges || []
-        setActiveChallenges(challenges)
-        setFilteredChallenges(challenges)
-        // Mettre à jour le cache des challenges
-        setChallengesList(challenges)
+        // Charger les challenges actifs et complétés en parallèle
+        const [activeResponse, completedResponse] = await Promise.all([
+          apiService.getActiveChallenges(),
+          apiService.getCompletedChallenges()
+        ])
         
-        // PRÉCHARGEMENT RADICAL: Charger les 3 premiers challenges en arrière-plan
+        const activeChallengesData = activeResponse.challenges || []
+        const completedChallengesData = completedResponse.challenges || []
+        
+        setActiveChallenges(activeChallengesData)
+        setCompletedChallenges(completedChallengesData)
+        setFilteredChallenges(activeChallengesData)
+        
+        // Mettre à jour le cache des challenges (uniquement les actifs pour la navigation)
+        setChallengesList(activeChallengesData)
+        
+        // PRÉCHARGEMENT RADICAL: Charger les 3 premiers challenges actifs en arrière-plan
         console.log('🔥 [RADICAL PRELOAD] Starting aggressive preloading...')
-        challenges.slice(0, 3).forEach((challenge: Challenge, index: number) => {
+        activeChallengesData.slice(0, 3).forEach((challenge: Challenge, index: number) => {
           setTimeout(() => {
             preloadChallenge(challenge._id).catch(console.error)
           }, index * 100) // Étaler les requêtes
@@ -61,6 +72,7 @@ function HomePage() {
       } catch (error) {
         console.error('Error loading challenges:', error)
         setActiveChallenges([])
+        setCompletedChallenges([])
       } finally {
         setLoading(false)
       }
@@ -71,17 +83,18 @@ function HomePage() {
 
   // Filtrage par prix d'entrée
   useEffect(() => {
-    let filtered = activeChallenges
+    const sourceChallenges = showCompleted ? completedChallenges : activeChallenges
+    let filtered = sourceChallenges
     
     if (selectedPriceFilter !== null) {
-      filtered = activeChallenges.filter(challenge => 
+      filtered = sourceChallenges.filter(challenge => 
         challenge.participationPrice === selectedPriceFilter
       )
     }
     
     setFilteredChallenges(filtered)
     setCurrentPage(1) // Reset à la page 1 quand on filtre
-  }, [activeChallenges, selectedPriceFilter])
+  }, [activeChallenges, completedChallenges, selectedPriceFilter, showCompleted])
 
   // Pagination
   const totalPages = Math.ceil(filteredChallenges.length / challengesPerPage)
@@ -179,18 +192,27 @@ function HomePage() {
                 <AddChallengeForm onSuccess={async () => {
                   setLoading(true)
                   try {
-                    const response = await apiService.getActiveChallenges()
-                    const challenges = response.challenges || []
-                    setActiveChallenges(challenges)
-                    setFilteredChallenges(challenges)
-                    setChallengesList(challenges)
-                    challenges.slice(0, 3).forEach((challenge: Challenge, index: number) => {
+                    const [activeResponse, completedResponse] = await Promise.all([
+                      apiService.getActiveChallenges(),
+                      apiService.getCompletedChallenges()
+                    ])
+                    
+                    const activeChallengesData = activeResponse.challenges || []
+                    const completedChallengesData = completedResponse.challenges || []
+                    
+                    setActiveChallenges(activeChallengesData)
+                    setCompletedChallenges(completedChallengesData)
+                    setFilteredChallenges(showCompleted ? completedChallengesData : activeChallengesData)
+                    setChallengesList(activeChallengesData)
+                    
+                    activeChallengesData.slice(0, 3).forEach((challenge: Challenge, index: number) => {
                       setTimeout(() => {
                         preloadChallenge(challenge._id).catch(console.error)
                       }, index * 100)
                     })
                   } catch (error) {
                     setActiveChallenges([])
+                    setCompletedChallenges([])
                   } finally {
                     setLoading(false)
                   }
@@ -257,8 +279,6 @@ function HomePage() {
             </div>
           </motion.div>
 
-
-
           {/* Challenges */}
           {!isAuthenticated ? (
             <motion.div 
@@ -312,6 +332,38 @@ function HomePage() {
             </motion.div>
           ) : (
             <div>
+              {/* Onglets Active/Completed */}
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mb-6"
+              >
+                <div className="flex justify-center">
+                  <div className="flex items-center space-x-1 bg-gray-50/80 rounded-full p-1 backdrop-blur-sm">
+                    <button
+                      onClick={() => setShowCompleted(false)}
+                      className={`px-6 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
+                        !showCompleted
+                          ? 'bg-white text-black shadow-sm'
+                          : 'text-gray-600 hover:text-black'
+                      }`}
+                    >
+                      Active ({activeChallenges.length})
+                    </button>
+                    <button
+                      onClick={() => setShowCompleted(true)}
+                      className={`px-6 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
+                        showCompleted
+                          ? 'bg-white text-black shadow-sm'
+                          : 'text-gray-600 hover:text-black'
+                      }`}
+                    >
+                      Completed ({completedChallenges.length})
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+
               {/* Filtres et pagination */}
               <motion.div 
                 initial={{ opacity: 0, y: 20 }}
@@ -399,13 +451,32 @@ function HomePage() {
                     <div className="flex items-center justify-between">
                       <div>
                         <div className="flex items-center space-x-3 mb-1">
-                          <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full status-pulse"></div>
+                          <div className={`w-1.5 h-1.5 rounded-full ${
+                            challenge.status === 'completed' 
+                              ? 'bg-gray-400' 
+                              : 'bg-emerald-400 status-pulse'
+                          }`}></div>
                           <span className="apple-text-primary text-sm font-medium apple-text-depth">Challenge #{index + 1}</span>
-                          <div className="px-2 py-0.5 bg-emerald-50 rounded-md">
-                            <span className="text-emerald-600 text-[10px] font-medium tracking-wide">LIVE</span>
+                          <div className={`px-2 py-0.5 rounded-md ${
+                            challenge.status === 'completed'
+                              ? 'bg-gray-50'
+                              : 'bg-emerald-50'
+                          }`}>
+                            <span className={`text-[10px] font-medium tracking-wide ${
+                              challenge.status === 'completed'
+                                ? 'text-gray-600'
+                                : 'text-emerald-600'
+                            }`}>
+                              {challenge.status === 'completed' ? 'COMPLETED' : 'LIVE'}
+                            </span>
                           </div>
                         </div>
-                        <p className="apple-text-secondary text-xs">Top 3 longest holders win</p>
+                        <p className="apple-text-secondary text-xs">
+                          {challenge.status === 'completed' 
+                            ? 'Challenge finished - View leaderboard' 
+                            : 'Top 3 longest holders win'
+                          }
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -525,23 +596,35 @@ function HomePage() {
                       onPointerDown={(e) => {
                         e.preventDefault()
                         e.stopPropagation()
-                        handleChallengeClick(challenge._id, e, e.currentTarget)
+                        if (challenge.status === 'completed') {
+                          window.open(`/leaderboard/challenge/${challenge._id}`, '_blank')
+                        } else {
+                          handleChallengeClick(challenge._id, e, e.currentTarget)
+                        }
                       }}
                       onClick={(e) => {
                         e.preventDefault()
                         e.stopPropagation()
-                        handleChallengeClick(challenge._id, e, e.currentTarget)
+                        if (challenge.status === 'completed') {
+                          window.open(`/leaderboard/challenge/${challenge._id}`, '_blank')
+                        } else {
+                          handleChallengeClick(challenge._id, e, e.currentTarget)
+                        }
                       }}
                       onMouseEnter={() => preloadChallengeOnHover(challenge._id)}
-                      disabled={navigatingToChallengeId === challenge._id}
+                      disabled={navigatingToChallengeId === challenge._id && challenge.status !== 'completed'}
                       className={`w-full py-3 rounded-lg text-sm font-medium transition-all duration-300 apple-focus ${
-                        navigatingToChallengeId === challenge._id
+                        challenge.status === 'completed'
+                          ? 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200'
+                          : navigatingToChallengeId === challenge._id
                           ? 'bg-gray-100 apple-text-secondary cursor-not-allowed'
                           : 'bg-black text-white hover:bg-gray-900 active:scale-98 shadow-apple-small hover:shadow-apple-medium'
                       }`}
                       style={{ outline: 'none' }}
                     >
-                      {navigatingToChallengeId === challenge._id ? (
+                      {challenge.status === 'completed' ? (
+                        <span>View Leaderboard</span>
+                      ) : navigatingToChallengeId === challenge._id ? (
                         <div className="flex items-center justify-center space-x-2">
                           <div className="w-3 h-3 border border-gray-400 border-t-transparent rounded-full animate-spin"></div>
                           <span>Joining...</span>

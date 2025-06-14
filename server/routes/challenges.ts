@@ -135,6 +135,20 @@ router.get('/active', async (req, res) => {
   }
 })
 
+// GET /api/challenges/completed - Récupérer les challenges complétés
+router.get('/completed', async (req, res) => {
+  try {
+    const challenges = await Challenge.find({ 
+      status: 'completed',
+    }).sort({ updatedAt: -1 }) // Trier par date de completion (updatedAt)
+
+    res.json({ challenges })
+  } catch (error) {
+    console.error('Erreur récupération challenges complétés:', error)
+    res.status(500).json({ message: 'Erreur serveur' })
+  }
+})
+
 // POST /api/challenges/migrate-participation-price - Migrer les challenges sans participationPrice
 router.post('/migrate-participation-price', async (req, res) => {
   try {
@@ -168,6 +182,63 @@ router.post('/migrate-participation-price', async (req, res) => {
     res.status(500).json({ 
       success: false,
       message: 'Migration failed',
+      error: (error as Error).message 
+    })
+  }
+})
+
+// POST /api/challenges/fix-completed-challenges - Corriger les challenges qui devraient être complétés
+router.post('/fix-completed-challenges', async (req, res) => {
+  try {
+    console.log('🔧 [FIX CHALLENGES] Starting fix for challenges that should be completed...')
+    
+    // Trouver tous les challenges actifs
+    const activeChallenges = await Challenge.find({ status: 'active' })
+    
+    console.log(`🔧 [FIX CHALLENGES] Found ${activeChallenges.length} active challenges to check`)
+    
+    let fixed = 0
+    for (const challenge of activeChallenges) {
+      // Compter le nombre de participants qui ont effectivement joué (timeHeld > 0)
+      const participationQuery = challenge.participationPrice > 0 
+        ? { challengeId: challenge._id, paymentStatus: 'completed', timeHeld: { $gt: 0 } }
+        : { challengeId: challenge._id, timeHeld: { $gt: 0 } }
+
+      const completedParticipations = await Participation.countDocuments(participationQuery)
+
+      console.log(`🎯 [FIX CHALLENGES] Challenge "${challenge.title}":`)
+      console.log(`   - Max participants: ${challenge.maxParticipants}`)
+      console.log(`   - Current participants: ${challenge.currentParticipants}`)
+      console.log(`   - Completed participations: ${completedParticipations}`)
+
+      // Si le challenge est plein et que tous ont joué, le marquer comme complété
+      if (challenge.currentParticipants >= challenge.maxParticipants && 
+          completedParticipations >= challenge.maxParticipants) {
+        
+        console.log(`✅ [FIX CHALLENGES] Marking challenge "${challenge.title}" as completed`)
+        
+        await Challenge.findByIdAndUpdate(challenge._id, {
+          status: 'completed'
+        })
+        
+        fixed++
+        console.log(`🎉 [FIX CHALLENGES] Challenge "${challenge.title}" has been fixed!`)
+      }
+    }
+    
+    console.log(`🔧 [FIX CHALLENGES] Fix completed. Updated ${fixed} challenges.`)
+    
+    res.json({
+      success: true,
+      message: `Fix completed. Updated ${fixed} challenges.`,
+      fixedCount: fixed,
+      checkedCount: activeChallenges.length
+    })
+  } catch (error) {
+    console.error('❌ [FIX CHALLENGES] Fix failed:', error)
+    res.status(500).json({ 
+      success: false,
+      message: 'Fix failed',
       error: (error as Error).message 
     })
   }
@@ -1007,8 +1078,50 @@ async function calculateRankings(challengeId: string) {
         rank: i + 1
       })
     }
+
+    // NOUVELLE LOGIQUE: Vérifier si le challenge doit être marqué comme complété
+    await checkAndUpdateChallengeCompletion(challengeId)
   } catch (error) {
     console.error('Erreur calcul classements:', error)
+  }
+}
+
+// NOUVELLE FONCTION: Vérifier et mettre à jour le statut de completion du challenge
+async function checkAndUpdateChallengeCompletion(challengeId: string) {
+  try {
+    const challenge = await Challenge.findById(challengeId)
+    if (!challenge || challenge.status !== 'active') {
+      return // Pas besoin de vérifier si le challenge n'est pas actif
+    }
+
+    // Compter le nombre de participants qui ont effectivement joué (timeHeld > 0)
+    const participationQuery = challenge.participationPrice > 0 
+      ? { challengeId, paymentStatus: 'completed', timeHeld: { $gt: 0 } }
+      : { challengeId, timeHeld: { $gt: 0 } }
+
+    const completedParticipations = await Participation.countDocuments(participationQuery)
+
+    console.log(`🎯 [CHALLENGE COMPLETION CHECK] Challenge: ${challenge.title}`)
+    console.log(`   - Max participants: ${challenge.maxParticipants}`)
+    console.log(`   - Current participants: ${challenge.currentParticipants}`)
+    console.log(`   - Completed participations: ${completedParticipations}`)
+
+    // Conditions pour marquer le challenge comme complété:
+    // 1. Le nombre de participants actuels >= nombre maximum
+    // 2. Tous les participants ont joué (timeHeld > 0)
+    if (challenge.currentParticipants >= challenge.maxParticipants && 
+        completedParticipations >= challenge.maxParticipants) {
+      
+      console.log(`✅ [CHALLENGE COMPLETION] Marking challenge "${challenge.title}" as completed`)
+      
+      await Challenge.findByIdAndUpdate(challengeId, {
+        status: 'completed'
+      })
+
+      console.log(`🎉 [CHALLENGE COMPLETION] Challenge "${challenge.title}" has been marked as completed!`)
+    }
+  } catch (error) {
+    console.error('Erreur lors de la vérification de completion du challenge:', error)
   }
 }
 

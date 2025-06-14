@@ -124,6 +124,10 @@ class ApiService {
     return this.request('/challenges/active')
   }
 
+  async getCompletedChallenges() {
+    return this.request('/challenges/completed')
+  }
+
   async getChallengeStats() {
     return this.request('/challenges/stats')
   }
