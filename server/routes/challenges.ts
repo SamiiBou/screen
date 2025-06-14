@@ -358,6 +358,11 @@ router.post('/initiate-participation-payment', auth, async (req: AuthRequest, re
       return res.status(400).json({ error: 'This challenge is free to join' })
     }
 
+    // Refuser le paiement si le challenge est plein
+    if (challenge.currentParticipants >= challenge.maxParticipants) {
+      return res.status(400).json({ error: 'Challenge is full' })
+    }
+
     // MODIFICATION: Vérifier si l'utilisateur a déjà une participation COMPLÉTÉE
     const completedParticipation = await Participation.findOne({
       userId: req.user!._id,
@@ -439,6 +444,11 @@ router.post('/confirm-participation-payment', auth, async (req: AuthRequest, res
 
     if (!participation) {
       return res.status(404).json({ error: 'Participation request not found' })
+    }
+
+    const freshChallenge = await Challenge.findById(participation.challengeId._id)
+    if (freshChallenge && freshChallenge.currentParticipants >= freshChallenge.maxParticipants) {
+      return res.status(400).json({ error: 'Challenge is full' })
     }
 
     // Pour les tests, accepter tous les paiements (à enlever en production)
@@ -778,6 +788,10 @@ router.post('/:challengeId/participate', auth, async (req: AuthRequest, res) => 
 
     if (challenge.status !== 'active') {
       return res.status(400).json({ message: 'Challenge non actif' })
+    }
+
+    if (challenge.currentParticipants >= challenge.maxParticipants) {
+      return res.status(400).json({ message: 'Challenge complet' })
     }
 
     // Pour les challenges payants, vérifier qu'il y a une participation payée
