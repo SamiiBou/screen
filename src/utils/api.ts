@@ -126,6 +126,10 @@ class ApiService {
     return this.request('/challenges/active')
   }
 
+  async getActiveDuels() {
+    return this.request('/duels/active')
+  }
+
   async getChallengeStats() {
     return this.request('/challenges/stats')
   }
@@ -159,6 +163,14 @@ class ApiService {
       body: JSON.stringify(challengeData)
     })
     console.log('📡 [API DEBUG] Backend response:', response)
+    return response
+  }
+
+  async createDuel(entryFee: number) {
+    const response = await this.request('/duels/create', {
+      method: 'POST',
+      body: JSON.stringify({ entryFee })
+    })
     return response
   }
 

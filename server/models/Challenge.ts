@@ -9,6 +9,7 @@ export interface IChallenge extends Document {
   secondPrize: number
   thirdPrize: number
   participationPrice: number
+  isDuel?: boolean
   status: 'upcoming' | 'active' | 'completed'
   createdAt: Date
 }
@@ -53,6 +54,10 @@ const ChallengeSchema: Schema = new Schema({
     type: Number,
     required: [true, 'Le prix du 3ème est requis'],
     min: [0, 'Le prix du 3ème ne peut pas être négatif']
+  },
+  isDuel: {
+    type: Boolean,
+    default: false
   },
   participationPrice: {
     type: Number,

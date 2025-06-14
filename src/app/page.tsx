@@ -9,6 +9,7 @@ import { useChallenges } from '@/contexts/ChallengesContext'
 import { AceternityButton } from '@/components/ui/AceternityButton'
 import AuthGate from '@/components/AuthGate'
 import AddChallengeForm from '@/components/AddChallengeForm'
+import AddDuelForm from '@/components/AddDuelForm'
 import QuickGame from '@/components/QuickGame'
 import HodlBalance from '@/components/HodlBalance'
 import Image from 'next/image'
@@ -28,6 +29,8 @@ interface Challenge {
 
 function HomePage() {
   const [activeChallenges, setActiveChallenges] = useState<Challenge[]>([])
+  const [activeDuels, setActiveDuels] = useState<Challenge[]>([])
+  const [viewMode, setViewMode] = useState<'challenges' | 'duels'>('challenges')
   const [loading, setLoading] = useState(true)
   const [navigatingToChallengeId, setNavigatingToChallengeId] = useState<string | null>(null)
   const [showQuickGame, setShowQuickGame] = useState(false)
@@ -62,6 +65,19 @@ function HomePage() {
 
     loadChallenges()
   }, [])
+
+  useEffect(() => {
+    if (viewMode !== 'duels') return
+    const loadDuels = async () => {
+      try {
+        const res = await apiService.getActiveDuels()
+        setActiveDuels(res.duels || [])
+      } catch (e) {
+        setActiveDuels([])
+      }
+    }
+    loadDuels()
+  }, [viewMode])
 
   // SYSTÈME DE PRÉCHARGEMENT RADICAL
   const preloadChallengeOnHover = useCallback(async (challengeId: string) => {
@@ -151,7 +167,7 @@ function HomePage() {
               />
             </motion.div>
             
-            {/* Add Challenge dans le header */}
+            {/* Admin forms */}
             {isAuthenticated && user?.walletAddress === '0x21bee69e692ceb4c02b66c7a45620684904ba395' && (
               <div className="flex items-center gap-4">
                 <AddChallengeForm onSuccess={async () => {
@@ -170,6 +186,12 @@ function HomePage() {
                     setActiveChallenges([])
                   } finally {
                     setLoading(false)
+                  }
+                }} />
+                <AddDuelForm onSuccess={async () => {
+                  if (viewMode === 'duels') {
+                    const res = await apiService.getActiveDuels()
+                    setActiveDuels(res.duels || [])
                   }
                 }} />
               </div>
@@ -208,9 +230,17 @@ function HomePage() {
 
 
 
+          {/* View Switcher */}
+          {isAuthenticated && user?.walletAddress === '0x21bee69e692ceb4c02b66c7a45620684904ba395' && (
+            <div className="flex justify-center space-x-4 mb-8">
+              <button onClick={() => setViewMode('challenges')} className={`text-sm px-3 py-1 rounded-full border ${viewMode==='challenges' ? 'bg-black text-white' : 'bg-white text-black'}`}>Challenges</button>
+              <button onClick={() => setViewMode('duels')} className={`text-sm px-3 py-1 rounded-full border ${viewMode==='duels' ? 'bg-black text-white' : 'bg-white text-black'}`}>1v1</button>
+            </div>
+          )}
+
           {/* Challenges */}
           {!isAuthenticated ? (
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               className="text-center"
@@ -222,6 +252,40 @@ function HomePage() {
                 Connect Wallet
               </AceternityButton>
             </motion.div>
+          ) : viewMode === 'duels' ? (
+            activeDuels.length === 0 ? (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="text-center"
+              >
+                <p className="text-gray-500 mb-6">No active duels</p>
+              </motion.div>
+            ) : (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="space-y-6"
+              >
+                {activeDuels.map((challenge, index) => (
+                  <motion.div
+                    key={challenge._id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.08 }}
+                    className="group apple-card challenge-card hover:shadow-apple-xl transition-all duration-500 cursor-pointer"
+                    onClick={(e) => handleChallengeClick(challenge._id, e)}
+                  >
+                    <div className="px-8 py-6">
+                      <div className="flex items-center justify-between">
+                        <span className="font-medium">1v1 Entry {challenge.participationPrice} WLD</span>
+                        <span className="text-sm">Prize {challenge.firstPrize} WLD</span>
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
+              </motion.div>
+            )
           ) : activeChallenges.length === 0 ? (
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
