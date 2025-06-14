@@ -19,184 +19,6 @@ interface ParticipationStatus {
   participationPrice: number
 }
 
-// Composant pour afficher le classement du challenge
-function ChallengeLeaderboard({ challengeId }: { challengeId: string }) {
-  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-
-  useEffect(() => {
-    if (challengeId) {
-      loadLeaderboard()
-    }
-  }, [challengeId])
-
-  const loadLeaderboard = async () => {
-    try {
-      setLoading(true)
-      setError(null)
-      const data = await apiService.getChallengeLeaderboard(challengeId, 1, 10) // Top 10
-      console.log('📊 Données du classement reçues:', data)
-      setLeaderboard(data.leaderboard || [])
-      
-      // Log des entrées individuelles pour debug
-      if (data.leaderboard && data.leaderboard.length > 0) {
-        data.leaderboard.forEach((entry: LeaderboardEntry, index: number) => {
-          console.log(`👤 Entrée ${index + 1}:`, {
-            username: entry.username,
-            timeHeld: entry.timeHeld,
-            challengesCompleted: entry.challengesCompleted,
-            rank: entry.rank
-          })
-        })
-      }
-    } catch (error: any) {
-      console.error('Error loading leaderboard:', error)
-      setError(error.message)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const formatTime = (ms: number) => {
-    // Log des valeurs pour debug
-    console.log('⏱️ Formatage du temps:', ms)
-    
-    // Si la valeur semble être trop petite (probablement en centisecondes), la convertir
-    let timeInMs = ms
-    if (ms < 1000 && ms > 0) {
-      // Probablement en centisecondes, convertir en millisecondes
-      timeInMs = ms * 10
-      console.log('🔄 Conversion centisecondes → millisecondes:', ms, '→', timeInMs)
-    }
-    
-    const seconds = Math.floor(timeInMs / 1000)
-    const minutes = Math.floor(seconds / 60)
-    const hours = Math.floor(minutes / 60)
-    
-    if (hours > 0) {
-      return `${hours}h ${minutes % 60}m ${seconds % 60}s`
-    } else if (minutes > 0) {
-      return `${minutes}m ${seconds % 60}s`
-    } else if (seconds > 0) {
-      return `${seconds}s`
-    } else if (timeInMs > 0) {
-      return `${Math.floor(timeInMs)}ms`
-    } else {
-      return '0s'
-    }
-  }
-
-  const getRankDisplay = (rank: number) => {
-    return rank
-  }
-
-  const getRankColor = (rank: number) => {
-    switch (rank) {
-      case 1: return 'text-black'
-      case 2: return 'text-gray-600'
-      case 3: return 'text-gray-600'
-      default: return 'text-gray-500'
-    }
-  }
-
-  if (loading) {
-    return (
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.6 }}
-        className="bg-gray-50 rounded-xl p-6 mt-8"
-      >
-        <h3 className="text-2xl font-light text-black mb-8">Leaderboard</h3>
-        <div className="flex items-center justify-center py-8">
-          <motion.div
-            className="w-6 h-6 border-2 border-black border-t-transparent rounded-full"
-            animate={{ rotate: 360 }}
-            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-          />
-        </div>
-      </motion.div>
-    )
-  }
-
-  if (error) {
-    return (
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.6 }}
-        className="bg-gray-50 rounded-xl p-6 mt-8"
-      >
-        <h3 className="text-lg font-semibold text-black mb-4">🏆 Current Leaderboard</h3>
-        <p className="text-gray-500 text-center py-4">Unable to load leaderboard</p>
-      </motion.div>
-    )
-  }
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.6 }}
-      className="bg-white border border-gray-100 rounded-2xl p-8 mt-12"
-    >
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-black">🏆 Current Leaderboard</h3>
-        {leaderboard.length > 0 && (
-          <span className="text-sm text-gray-500">Top {Math.min(leaderboard.length, 10)}</span>
-        )}
-      </div>
-      
-      {leaderboard.length === 0 ? (
-        <div className="text-center py-12">
-          <p className="text-gray-400 text-sm">No participants yet</p>
-        </div>
-      ) : (
-        <div className="space-y-2">
-          {leaderboard.slice(0, 10).map((entry, index) => (
-            <motion.div
-              key={`${entry.username}-${index}`}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.05 }}
-              className="flex items-center justify-between py-4 border-b border-gray-50 last:border-0"
-            >
-              <div className="flex items-center space-x-3">
-                <div className={`text-sm font-medium ${getRankColor(entry.rank)} min-w-[32px] text-center`}>
-                  {getRankDisplay(entry.rank)}
-                </div>
-                <div>
-                  <div className="font-medium text-black text-sm">
-                    {entry.username}
-                  </div>
-                </div>
-              </div>
-              
-              <div className="text-right">
-                <div className="font-medium text-black text-sm">
-                  {formatTime(entry.timeHeld)}
-                </div>
-              </div>
-            </motion.div>
-          ))}
-          
-          {leaderboard.length > 10 && (
-            <div className="text-center py-2 mt-4">
-              <AceternityButton
-                onClick={() => window.open(`/leaderboard/challenge/${challengeId}`, '_blank')}
-                className="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300 transition-colors text-sm"
-              >
-                View Full Leaderboard →
-              </AceternityButton>
-            </div>
-          )}
-        </div>
-      )}
-    </motion.div>
-  )
-}
-
 function ChallengePage() {
   const params = useParams()
   const router = useRouter()
@@ -862,8 +684,6 @@ function ChallengePage() {
             )}
           </motion.div>
 
-          <ChallengeLeaderboard challengeId={challengeId} />
-
           {/* Challenge Rules - Apple footer style, subtle but present */}
           <motion.div
             initial={{ opacity: 0 }}
@@ -874,6 +694,27 @@ function ChallengePage() {
             <p className="text-gray-500 text-xs text-center leading-relaxed max-w-lg mx-auto">
               Challenges are valid when fully subscribed • Prize distribution occurs daily at 00:00 GMT
             </p>
+          </motion.div>
+
+          {/* Message indiquant que le classement sera affiché à la fin */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.8 }}
+            className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-8 mt-8 border border-blue-100"
+          >
+            <div className="text-center">
+              <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span className="text-white text-lg">🏆</span>
+              </div>
+              <h3 className="text-lg font-semibold text-gray-800 mb-2">Classement en Temps Réel</h3>
+              <p className="text-gray-600 text-sm leading-relaxed max-w-md mx-auto">
+                Le classement sera révélé à la fin du challenge. Restez concentré et donnez le meilleur de vous-même !
+              </p>
+              <div className="mt-4 text-xs text-gray-500">
+                Les résultats seront publiés automatiquement une fois le challenge terminé
+              </div>
+            </div>
           </motion.div>
 
         </div>
