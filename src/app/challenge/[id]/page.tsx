@@ -696,24 +696,18 @@ function ChallengePage() {
             </p>
           </motion.div>
 
-          {/* Message indiquant que le classement sera affiché à la fin */}
+          {/* Leaderboard message */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.8 }}
-            className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-8 mt-8 border border-blue-100"
+            className="bg-gray-50 rounded-2xl p-6 mt-8"
           >
             <div className="text-center">
-              <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-white text-lg">🏆</span>
-              </div>
-              <h3 className="text-lg font-semibold text-gray-800 mb-2">Classement en Temps Réel</h3>
-              <p className="text-gray-600 text-sm leading-relaxed max-w-md mx-auto">
-                Le classement sera révélé à la fin du challenge. Restez concentré et donnez le meilleur de vous-même !
+              <h3 className="text-lg font-semibold text-black mb-2">🏆 Leaderboard</h3>
+              <p className="text-gray-500 text-sm">
+                The leaderboard will be revealed at the end of the challenge
               </p>
-              <div className="mt-4 text-xs text-gray-500">
-                Les résultats seront publiés automatiquement une fois le challenge terminé
-              </div>
             </div>
           </motion.div>
 
