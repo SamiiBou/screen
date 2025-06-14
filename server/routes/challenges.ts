@@ -27,7 +27,7 @@ async function verifyPayment(
 ): Promise<{ ok: boolean; data?: WorldApiTransactionResponse; pending?: boolean }> {
   console.log(`🔍 [VERIFY PAYMENT] Starting verification for transaction ${txId} with reference ${reference}`)
   
-  // Aligner avec la documentation officielle,
+  // Aligner avec la documentation officielle,,
   // https://developer.worldcoin.org/api/v2/minikit/transaction/<txId>?app_id=<APP_ID>
   const url =
     `https://developer.worldcoin.org/api/v2/minikit/transaction/${txId}` +
