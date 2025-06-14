@@ -1,26 +1,27 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useParams } from 'next/navigation'
-import Link from 'next/link'
+import { useParams, useRouter } from 'next/navigation'
+import { motion } from 'motion/react'
+import Image from 'next/image'
 import { apiService, LeaderboardEntry } from '@/utils/api'
 
 export default function ChallengeLeaderboardPage() {
   const params = useParams()
+  const router = useRouter()
   const challengeId = params?.challengeId as string
 
   // Early return if no challengeId
   if (!challengeId) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center">
-        <div className="text-center text-white">
-          <div className="text-2xl font-semibold mb-4">Invalid Challenge</div>
-          <Link 
-            href="/mode-selection" 
-            className="text-purple-200 hover:text-white underline"
-          >
-            ← Back to Mode Selection
-          </Link>
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center">
+          <motion.div
+            className="w-8 h-8 border-2 border-black border-t-transparent rounded-full mx-auto mb-4"
+            animate={{ rotate: 360 }}
+            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+          />
+          <p className="text-gray-500">Invalid Challenge</p>
         </div>
       </div>
     )
@@ -75,7 +76,7 @@ export default function ChallengeLeaderboardPage() {
     })
   }
 
-  const getRankEmoji = (rank: number) => {
+  const getRankDisplay = (rank: number) => {
     switch (rank) {
       case 1: return '🥇'
       case 2: return '🥈'
@@ -86,169 +87,209 @@ export default function ChallengeLeaderboardPage() {
 
   const getRankColor = (rank: number) => {
     switch (rank) {
-      case 1: return 'text-yellow-400'
-      case 2: return 'text-gray-300'
-      case 3: return 'text-orange-400'
-      default: return 'text-white'
+      case 1: return 'text-yellow-600'
+      case 2: return 'text-gray-500'
+      case 3: return 'text-orange-500'
+      default: return 'text-gray-700'
     }
   }
 
   if (loading && !leaderboard.length) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center">
-        <div className="text-white text-2xl">Chargement du classement...</div>
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <motion.div
+          className="w-8 h-8 border-2 border-black border-t-transparent rounded-full"
+          animate={{ rotate: 360 }}
+          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+        />
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-600 to-blue-600 p-6">
-      <div className="max-w-6xl mx-auto">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <Link 
-            href="/mode-selection" 
-            className="text-purple-200 hover:text-white underline mb-4 inline-block"
-          >
-            ← Retour à la sélection de mode
-          </Link>
-          {challenge && (
-            <>
-              <h1 className="text-4xl font-bold text-white mb-2">
-                🏆 Classement : {challenge.title}
-              </h1>
-              <p className="text-purple-200 text-lg">
-                {challenge.description}
-              </p>
-              <div className="mt-4 text-purple-200">
-                Statut: <span className={`font-semibold ${
-                  challenge.status === 'active' ? 'text-green-400' :
-                  challenge.status === 'upcoming' ? 'text-yellow-400' :
-                  'text-gray-400'
-                }`}>
-                  {challenge.status === 'active' ? 'Actif' :
-                   challenge.status === 'upcoming' ? 'À venir' : 'Terminé'}
-                </span>
-              </div>
-            </>
-          )}
-        </div>
-
-        {/* Stats */}
-        {pagination && (
-          <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 mb-8">
-            <div className="text-center">
-              <h2 className="text-2xl font-bold text-white mb-4">Statistiques</h2>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="bg-white/10 rounded-xl p-4">
-                  <div className="text-2xl font-bold text-yellow-400">
-                    👥 {pagination.totalParticipants}
-                  </div>
-                  <div className="text-purple-200">Participants total</div>
-                </div>
-                <div className="bg-white/10 rounded-xl p-4">
-                  <div className="text-2xl font-bold text-green-400">
-                    📄 {pagination.currentPage}/{pagination.totalPages}
-                  </div>
-                  <div className="text-purple-200">Pages</div>
-                </div>
-                <div className="bg-white/10 rounded-xl p-4">
-                  <Link 
-                    href={`/challenge/${challengeId}`}
-                    className="text-2xl font-bold text-blue-400 hover:text-blue-300"
-                  >
-                    🚀 Participer
-                  </Link>
-                  <div className="text-purple-200">Au challenge</div>
-                </div>
-              </div>
-            </div>
+    <div className="min-h-screen bg-white">
+      {/* Header - exactement comme la page principale */}
+      <motion.nav 
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-xl"
+      >
+        <div className="max-w-4xl mx-auto px-6 py-2">
+          <div className="flex items-center justify-between">
+            <motion.div 
+              className="flex items-center cursor-pointer"
+              whileHover={{ scale: 1.02 }}
+              onClick={() => router.push('/')}
+            >
+              <Image 
+                src="/HODL_LOGO.png" 
+                alt="HODL Logo" 
+                width={400} 
+                height={120} 
+                className="h-20 w-auto"
+              />
+            </motion.div>
+            
+            <motion.button
+              onClick={() => router.back()}
+              className="text-gray-600 hover:text-black text-sm font-medium transition-colors"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              ← Back
+            </motion.button>
           </div>
-        )}
+        </div>
+      </motion.nav>
 
-        {/* Leaderboard */}
-        <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-6 mb-8">
-          <h2 className="text-2xl font-bold text-white mb-6 text-center">
-            🎯 Classement des Participants
-          </h2>
+      {/* Main Content */}
+      <div className="pt-24 pb-12 px-4 md:px-6">
+        <div className="max-w-4xl mx-auto">
           
-          {leaderboard.length === 0 ? (
-            <div className="text-center text-purple-200 py-8">
-              Aucune participation pour le moment
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {leaderboard.map((entry, index) => (
-                <div 
-                  key={entry.rank} 
-                  className={`bg-white/10 rounded-xl p-4 flex items-center justify-between hover:bg-white/20 transition-colors ${
-                    entry.rank <= 3 ? 'border-2 border-yellow-400/50' : ''
-                  }`}
-                >
-                  <div className="flex items-center space-x-4">
-                    <div className={`text-2xl font-bold ${getRankColor(entry.rank)} min-w-[60px]`}>
-                      {getRankEmoji(entry.rank)}
-                    </div>
-                    <div>
-                      <div className="text-white font-semibold text-lg">
-                        {entry.username}
-                      </div>
-                      <div className="text-purple-200 text-sm">
-                        {formatDate(entry.participationDate)}
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="text-right">
-                    <div className="text-white font-bold text-lg">
-                      ⏱️ {formatTime(entry.timeHeld)}
-                    </div>
-                    <div className="text-purple-200 text-sm">
-                      🎯 {entry.challengesCompleted} défis
-                    </div>
-                    <div className="text-red-300 text-xs">
-                      {entry.eliminationReason}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Pagination */}
-        {pagination && pagination.totalPages > 1 && (
-          <div className="flex justify-center space-x-2 mb-8">
-            <button
-              onClick={() => setCurrentPage(currentPage - 1)}
-              disabled={!pagination.hasPrev || loading}
-              className="bg-white/20 text-white px-4 py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-white/30"
-            >
-              ← Précédent
-            </button>
-            
-            <span className="bg-white/20 text-white px-4 py-2 rounded-lg">
-              Page {pagination.currentPage} sur {pagination.totalPages}
-            </span>
-            
-            <button
-              onClick={() => setCurrentPage(currentPage + 1)}
-              disabled={!pagination.hasNext || loading}
-              className="bg-white/20 text-white px-4 py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-white/30"
-            >
-              Suivant →
-            </button>
-          </div>
-        )}
-
-        {/* Navigation */}
-        <div className="text-center">
-          <Link 
-            href="/leaderboard" 
-            className="text-purple-200 hover:text-white underline text-lg"
+          {/* Challenge Info Header */}
+          <motion.div
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-center mb-12"
           >
-            📊 Voir le classement global
-          </Link>
+            {challenge && (
+              <>
+                <div className="flex items-center justify-center space-x-3 mb-4">
+                  <div className={`w-2 h-2 rounded-full ${
+                    challenge.status === 'completed' ? 'bg-gray-400' : 'bg-emerald-400'
+                  }`}></div>
+                  <span className={`text-xs font-medium uppercase tracking-wide ${
+                    challenge.status === 'completed' ? 'text-gray-600' : 'text-emerald-600'
+                  }`}>
+                    {challenge.status === 'completed' ? 'Completed Challenge' : 'Active Challenge'}
+                  </span>
+                </div>
+                
+                <h1 className="text-4xl md:text-5xl font-light text-black mb-4 leading-none tracking-tight">
+                  {challenge.title}
+                </h1>
+                
+                <p className="text-gray-500 text-lg max-w-2xl mx-auto">
+                  {challenge.description}
+                </p>
+              </>
+            )}
+          </motion.div>
+
+          {/* Leaderboard */}
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="apple-card mb-8"
+          >
+            {/* Header */}
+            <div className="px-8 pt-6 pb-4 border-b border-gray-50">
+              <div className="text-center">
+                <h2 className="apple-text-primary text-xl font-medium">Leaderboard</h2>
+                <p className="apple-text-secondary text-sm mt-1">
+                  {pagination ? `${pagination.totalParticipants} participants` : 'Loading...'}
+                </p>
+              </div>
+            </div>
+
+            {/* Leaderboard Content */}
+            <div className="px-8 py-6">
+              {leaderboard.length === 0 ? (
+                <div className="text-center py-12">
+                  <p className="text-gray-400 text-sm">No participants yet</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {leaderboard.map((entry, index) => (
+                    <motion.div
+                      key={`${entry.username}-${entry.rank}`}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.05 }}
+                      className={`flex items-center justify-between py-4 px-4 rounded-lg transition-all duration-200 ${
+                        entry.rank <= 3 
+                          ? 'bg-gray-50 border border-gray-100' 
+                          : 'hover:bg-gray-50/50'
+                      }`}
+                    >
+                      <div className="flex items-center space-x-4">
+                        <div className={`text-lg font-semibold ${getRankColor(entry.rank)} min-w-[48px] text-center`}>
+                          {getRankDisplay(entry.rank)}
+                        </div>
+                        <div>
+                          <div className="font-medium text-black">
+                            {entry.username}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {formatDate(entry.participationDate)}
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="text-right">
+                        <div className="font-semibold text-black">
+                          {formatTime(entry.timeHeld)}
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          {entry.challengesCompleted} challenges
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Pagination */}
+            {pagination && pagination.totalPages > 1 && (
+              <div className="px-8 pb-6">
+                <div className="flex justify-center items-center space-x-2">
+                  <button
+                    onClick={() => setCurrentPage(currentPage - 1)}
+                    disabled={!pagination.hasPrev || loading}
+                    className={`w-8 h-8 rounded-full text-xs font-medium transition-all duration-200 ${
+                      !pagination.hasPrev || loading
+                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                        : 'bg-white text-black hover:bg-gray-50 shadow-sm hover:shadow-md'
+                    }`}
+                  >
+                    ←
+                  </button>
+                  
+                  <span className="px-4 py-2 text-xs text-gray-600">
+                    Page {pagination.currentPage} of {pagination.totalPages}
+                  </span>
+                  
+                  <button
+                    onClick={() => setCurrentPage(currentPage + 1)}
+                    disabled={!pagination.hasNext || loading}
+                    className={`w-8 h-8 rounded-full text-xs font-medium transition-all duration-200 ${
+                      !pagination.hasNext || loading
+                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                        : 'bg-white text-black hover:bg-gray-50 shadow-sm hover:shadow-md'
+                    }`}
+                  >
+                    →
+                  </button>
+                </div>
+              </div>
+            )}
+          </motion.div>
+
+          {/* Back to Challenge Button */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-center"
+          >
+            <button
+              onClick={() => router.push(`/challenge/${challengeId}`)}
+              className="bg-black text-white px-6 py-3 rounded-lg text-sm font-medium hover:bg-gray-900 transition-all duration-200 shadow-apple-small hover:shadow-apple-medium"
+            >
+              View Challenge Details
+            </button>
+          </motion.div>
+
         </div>
       </div>
     </div>
