@@ -38,7 +38,7 @@ export default function AddDuelChallengeForm({ onSuccess }: AddDuelChallengeForm
       {/* Bouton simple pour ouvrir la modal */}
       <button
         onClick={() => setShowModal(true)}
-        className="bg-black text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-800 transition-all duration-300 flex items-center space-x-2"
+        className="bg-black text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-800 transition-all duration-300 flex items-center justify-center space-x-2 mx-auto"
       >
         <span>⚔️</span>
         <span>Create New Duel</span>

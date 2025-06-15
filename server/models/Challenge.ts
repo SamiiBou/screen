@@ -11,6 +11,7 @@ export interface IChallenge extends Document {
   participationPrice: number
   status: 'upcoming' | 'active' | 'completed'
   createdAt: Date
+  createdBy?: mongoose.Types.ObjectId
 }
 
 const ChallengeSchema: Schema = new Schema({
@@ -67,6 +68,11 @@ const ChallengeSchema: Schema = new Schema({
       message: 'Status must be upcoming, active or completed'
     },
     default: 'upcoming'
+  },
+  createdBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: false
   }
 }, {
   timestamps: true

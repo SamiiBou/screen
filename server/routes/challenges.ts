@@ -369,7 +369,8 @@ router.post('/create', auth, async (req: AuthRequest, res) => {
       secondPrize,
       thirdPrize,
       participationPrice,
-      status: 'active'
+      status: 'active',
+      createdBy: req.user!._id
     }
 
     console.log('🆕 [CREATE-CHALLENGE DEBUG] Challenge data before creation:', challengeData)
@@ -431,7 +432,8 @@ router.post('/create-1v1', auth, async (req: AuthRequest, res) => {
       secondPrize: 0,
       thirdPrize: 0,
       participationPrice: participationPrice,
-      status: 'active'
+      status: 'active',
+      createdBy: req.user!._id
     })
 
     await challenge.save()
