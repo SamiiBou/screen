@@ -96,15 +96,15 @@ function HomePage() {
     if (showMyDuels) {
       // Pour "My Duels", on combine actifs et complétés créés par l'utilisateur OU auxquels il participe
       sourceChallenges = [...activeChallenges, ...completedChallenges].filter(ch => {
-        const userHash = user?.worldcoin?.nullifier_hash
-        if (!userHash) return false
+        const userId = user?.id || user?.walletAddress
+        if (!userId) return false
         
         // Duels créés par l'utilisateur
-        const isCreatedByUser = ch.createdBy === userHash || ch.creator === userHash
+        const isCreatedByUser = ch.createdBy === userId || ch.creator === userId
         
         // Duels auxquels l'utilisateur participe
         const isParticipating = ch.participants && ch.participants.some(p => 
-          p.user === userHash || p.userId === userHash || p.userHash === userHash
+          p.user === userId || p.userId === userId || p.userHash === userId
         )
         
         return isCreatedByUser || isParticipating
@@ -536,11 +536,11 @@ function HomePage() {
                             setActiveChallenges(activeChallengesData)
                             setCompletedChallenges(completedChallengesData)
                             setFilteredChallenges(showMyDuels ? [...activeChallengesData, ...completedChallengesData].filter(ch => {
-                              const userHash = user?.worldcoin?.nullifier_hash
-                              if (!userHash) return false
-                              const isCreatedByUser = ch.createdBy === userHash || ch.creator === userHash
+                              const userId = user?.id || user?.walletAddress
+                              if (!userId) return false
+                              const isCreatedByUser = ch.createdBy === userId || ch.creator === userId
                               const isParticipating = ch.participants && ch.participants.some(p => 
-                                p.user === userHash || p.userId === userHash || p.userHash === userHash
+                                p.user === userId || p.userId === userId || p.userHash === userId
                               )
                               return isCreatedByUser || isParticipating
                             }) : (showCompleted ? completedChallengesData : activeChallengesData))
@@ -660,11 +660,11 @@ function HomePage() {
                               setActiveChallenges(activeChallengesData)
                               setCompletedChallenges(completedChallengesData)
                               setFilteredChallenges([...activeChallengesData, ...completedChallengesData].filter(ch => {
-                                const userHash = user?.worldcoin?.nullifier_hash
-                                if (!userHash) return false
-                                const isCreatedByUser = ch.createdBy === userHash || ch.creator === userHash
+                                const userId = user?.id || user?.walletAddress
+                                if (!userId) return false
+                                const isCreatedByUser = ch.createdBy === userId || ch.creator === userId
                                 const isParticipating = ch.participants && ch.participants.some(p => 
-                                  p.user === userHash || p.userId === userHash || p.userHash === userHash
+                                  p.user === userId || p.userId === userId || p.userHash === userId
                                 )
                                 return isCreatedByUser || isParticipating
                               }))
@@ -719,9 +719,9 @@ function HomePage() {
                           </span>
                           
                           {/* Indicateur My Duels */}
-                          {showMyDuels && user?.worldcoin?.nullifier_hash && (
+                          {showMyDuels && (user?.id || user?.walletAddress) && (
                             <div className="flex items-center space-x-1">
-                              {(challenge.createdBy === user.worldcoin.nullifier_hash || challenge.creator === user.worldcoin.nullifier_hash) ? (
+                              {(challenge.createdBy === (user?.id || user?.walletAddress) || challenge.creator === (user?.id || user?.walletAddress)) ? (
                                 <span className="text-xs bg-black text-white px-2 py-0.5 rounded-full font-medium">
                                   Created
                                 </span>
