@@ -26,6 +26,14 @@ interface Challenge {
   thirdPrize: number
   participationPrice: number
   status: 'upcoming' | 'active' | 'completed'
+  createdBy?: string
+  creator?: string
+  participants?: Array<{
+    user?: string
+    userId?: string
+    userHash?: string
+    walletAddress?: string
+  }>
 }
 
 // Type representing the two possible game modes handled by the page
@@ -100,11 +108,14 @@ function HomePage() {
         if (!userId) return false
         
         // Duels créés par l'utilisateur
-        const isCreatedByUser = ch.createdBy === userId || ch.creator === userId
+        const isCreatedByUser = (ch.createdBy && ch.createdBy === userId) || (ch.creator && ch.creator === userId)
         
         // Duels auxquels l'utilisateur participe
         const isParticipating = ch.participants && ch.participants.some(p => 
-          p.user === userId || p.userId === userId || p.userHash === userId
+          (p.user && p.user === userId) || 
+          (p.userId && p.userId === userId) || 
+          (p.userHash && p.userHash === userId) ||
+          (p.walletAddress && p.walletAddress === userId)
         )
         
         return isCreatedByUser || isParticipating
@@ -538,9 +549,9 @@ function HomePage() {
                             setFilteredChallenges(showMyDuels ? [...activeChallengesData, ...completedChallengesData].filter(ch => {
                               const userId = user?.id || user?.walletAddress
                               if (!userId) return false
-                              const isCreatedByUser = ch.createdBy === userId || ch.creator === userId
+                              const isCreatedByUser = (ch.createdBy && ch.createdBy === userId) || (ch.creator && ch.creator === userId)
                               const isParticipating = ch.participants && ch.participants.some(p => 
-                                p.user === userId || p.userId === userId || p.userHash === userId
+                                (p.user && p.user === userId) || (p.userId && p.userId === userId) || (p.userHash && p.userHash === userId) || (p.walletAddress && p.walletAddress === userId)
                               )
                               return isCreatedByUser || isParticipating
                             }) : (showCompleted ? completedChallengesData : activeChallengesData))
@@ -662,9 +673,9 @@ function HomePage() {
                               setFilteredChallenges([...activeChallengesData, ...completedChallengesData].filter(ch => {
                                 const userId = user?.id || user?.walletAddress
                                 if (!userId) return false
-                                const isCreatedByUser = ch.createdBy === userId || ch.creator === userId
+                                const isCreatedByUser = (ch.createdBy && ch.createdBy === userId) || (ch.creator && ch.creator === userId)
                                 const isParticipating = ch.participants && ch.participants.some(p => 
-                                  p.user === userId || p.userId === userId || p.userHash === userId
+                                  (p.user && p.user === userId) || (p.userId && p.userId === userId) || (p.userHash && p.userHash === userId) || (p.walletAddress && p.walletAddress === userId)
                                 )
                                 return isCreatedByUser || isParticipating
                               }))
@@ -721,7 +732,7 @@ function HomePage() {
                           {/* Indicateur My Duels */}
                           {showMyDuels && (user?.id || user?.walletAddress) && (
                             <div className="flex items-center space-x-1">
-                              {(challenge.createdBy === (user?.id || user?.walletAddress) || challenge.creator === (user?.id || user?.walletAddress)) ? (
+                              {((challenge.createdBy && challenge.createdBy === (user?.id || user?.walletAddress)) || (challenge.creator && challenge.creator === (user?.id || user?.walletAddress))) ? (
                                 <span className="text-xs bg-black text-white px-2 py-0.5 rounded-full font-medium">
                                   Created
                                 </span>
