@@ -331,3 +331,109 @@ body {
 }
 
 /* Next.js overlay restored */
+
+/* Duel-specific styles - Redesigned for consistency */
+.duel-card {
+  background: linear-gradient(135deg, #fff 0%, #fefbfb 100%) !important;
+  border: 1px solid rgba(255, 99, 132, 0.08) !important;
+  position: relative;
+  overflow: hidden;
+}
+
+.duel-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #ff6b6b, #ff8e8e, #ffb4b4, #ff8e8e, #ff6b6b);
+  background-size: 200% 100%;
+  animation: duel-shimmer 4s ease-in-out infinite;
+  opacity: 0.6;
+}
+
+@keyframes duel-shimmer {
+  0%, 100% { background-position: 200% 0; opacity: 0.4; }
+  50% { background-position: -200% 0; opacity: 0.8; }
+}
+
+.duel-card:hover {
+  box-shadow: 0 12px 40px rgba(255, 99, 132, 0.12) !important;
+  transform: translateY(-2px) !important;
+  border-color: rgba(255, 99, 132, 0.15) !important;
+}
+
+.duel-card:hover::before {
+  animation-duration: 2s;
+  opacity: 1;
+}
+
+/* Apple-style shadows enhanced */
+.shadow-apple-small {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.06) !important;
+}
+
+.shadow-apple-medium {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08), 0 2px 6px rgba(0, 0, 0, 0.1) !important;
+}
+
+.shadow-apple-large {
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12), 0 4px 12px rgba(0, 0, 0, 0.14) !important;
+}
+
+.shadow-apple-xl {
+  box-shadow: 0 16px 64px rgba(0, 0, 0, 0.16), 0 8px 24px rgba(0, 0, 0, 0.18) !important;
+}
+
+/* Enhanced challenge card animations */
+.challenge-card {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
+}
+
+.challenge-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  transition: left 0.5s;
+}
+
+.challenge-card:hover::before {
+  left: 100%;
+}
+
+/* Mode selection specific styles */
+.mode-selector-card {
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
+}
+
+.mode-selector-card:hover {
+  transform: translateY(-4px) scale(1.01) !important;
+}
+
+/* Improved button styles */
+.btn-mode-primary {
+  background: linear-gradient(135deg, #000 0%, #333 100%) !important;
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
+}
+
+.btn-mode-primary:hover {
+  background: linear-gradient(135deg, #333 0%, #555 100%) !important;
+  transform: translateY(-1px) !important;
+}
+
+.btn-duel-primary {
+  background: linear-gradient(135deg, #dc2626 0%, #ef4444 100%) !important;
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
+}
+
+.btn-duel-primary:hover {
+  background: linear-gradient(135deg, #b91c1c 0%, #dc2626 100%) !important;
+  transform: translateY(-1px) !important;
+}

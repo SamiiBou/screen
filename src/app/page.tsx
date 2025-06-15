@@ -9,11 +9,11 @@ import { useChallenges } from '@/contexts/ChallengesContext'
 import { AceternityButton } from '@/components/ui/AceternityButton'
 import AuthGate from '@/components/AuthGate'
 import AddChallengeForm from '@/components/AddChallengeForm'
-import AddDuelChallengeForm from '@/components/AddDuelChallengeForm'
 import QuickGame from '@/components/QuickGame'
 import HodlBalance from '@/components/HodlBalance'
 import Image from 'next/image'
 import { FaTelegramPlane } from 'react-icons/fa'
+import AddDuelChallengeForm from '@/components/AddDuelChallengeForm'
 
 interface Challenge {
   _id: string
@@ -28,6 +28,9 @@ interface Challenge {
   status: 'upcoming' | 'active' | 'completed'
 }
 
+// Type representing the two possible game modes handled by the page
+type GameMode = '1v1' | 'multiplayer'
+
 function HomePage() {
   const [activeChallenges, setActiveChallenges] = useState<Challenge[]>([])
   const [completedChallenges, setCompletedChallenges] = useState<Challenge[]>([])
@@ -39,6 +42,8 @@ function HomePage() {
   const [currentPage, setCurrentPage] = useState(1)
   const [showCompleted, setShowCompleted] = useState(false)
   const [showDuels, setShowDuels] = useState(false)
+  const [showMyDuels, setShowMyDuels] = useState(false)
+  const [gameMode, setGameMode] = useState<GameMode | null>(null)
   const challengesPerPage = 3
   const navigatingRef = useRef<Record<string, boolean>>({})
   const { user, isAuthenticated } = useAuth()
@@ -83,12 +88,34 @@ function HomePage() {
     loadChallenges()
   }, [])
 
-  // Filtrage par prix d'entrée
+  // Filtrage par prix d'entrée et mode de jeu
   useEffect(() => {
-    const sourceChallenges = showCompleted ? completedChallenges : activeChallenges
+    if (!gameMode) return // Ne pas filtrer si aucun mode sélectionné
+    
+    let sourceChallenges
+    if (showMyDuels) {
+      // Pour "My Duels", on combine actifs et complétés créés par l'utilisateur OU auxquels il participe
+      sourceChallenges = [...activeChallenges, ...completedChallenges].filter(ch => {
+        const userHash = user?.worldcoin?.nullifier_hash
+        if (!userHash) return false
+        
+        // Duels créés par l'utilisateur
+        const isCreatedByUser = ch.createdBy === userHash || ch.creator === userHash
+        
+        // Duels auxquels l'utilisateur participe
+        const isParticipating = ch.participants && ch.participants.some(p => 
+          p.user === userHash || p.userId === userHash || p.userHash === userHash
+        )
+        
+        return isCreatedByUser || isParticipating
+      })
+    } else {
+      sourceChallenges = showCompleted ? completedChallenges : activeChallenges
+    }
+    
     let filtered = sourceChallenges
 
-    if (showDuels) {
+    if (gameMode === '1v1') {
       filtered = filtered.filter(ch => ch.maxParticipants === 2)
     } else {
       filtered = filtered.filter(ch => ch.maxParticipants !== 2)
@@ -102,7 +129,7 @@ function HomePage() {
     
     setFilteredChallenges(filtered)
     setCurrentPage(1) // Reset à la page 1 quand on filtre
-  }, [activeChallenges, completedChallenges, selectedPriceFilter, showCompleted, showDuels])
+  }, [activeChallenges, completedChallenges, selectedPriceFilter, showCompleted, showMyDuels, gameMode, user])
 
   // Pagination
   const totalPages = Math.ceil(filteredChallenges.length / challengesPerPage)
@@ -194,80 +221,21 @@ function HomePage() {
               />
             </motion.div>
             
-            {/* Add Challenge et Telegram Button dans le header */}
+            {/* Bouton de retour - plus simple */}
             <div className="flex items-center gap-4">
-              {isAuthenticated && user?.walletAddress === '0x21bee69e692ceb4c02b66c7a45620684904ba395' && (
-                showDuels ?
-                  <AddDuelChallengeForm onSuccess={async () => {
-                    setLoading(true)
-                    try {
-                      const [activeResponse, completedResponse] = await Promise.all([
-                        apiService.getActiveChallenges(),
-                        apiService.getCompletedChallenges()
-                      ])
-
-                      const activeChallengesData = activeResponse.challenges || []
-                      const completedChallengesData = completedResponse.challenges || []
-
-                      setActiveChallenges(activeChallengesData)
-                      setCompletedChallenges(completedChallengesData)
-                      setFilteredChallenges(showCompleted ? completedChallengesData : activeChallengesData)
-                      setChallengesList(activeChallengesData)
-
-                      activeChallengesData.slice(0, 3).forEach((challenge: Challenge, index: number) => {
-                        setTimeout(() => {
-                          preloadChallenge(challenge._id).catch(console.error)
-                        }, index * 100)
-                      })
-                    } catch (error) {
-                      setActiveChallenges([])
-                      setCompletedChallenges([])
-                    } finally {
-                      setLoading(false)
-                    }
-                  }} />
-                :
-                  <AddChallengeForm onSuccess={async () => {
-                    setLoading(true)
-                    try {
-                      const [activeResponse, completedResponse] = await Promise.all([
-                        apiService.getActiveChallenges(),
-                        apiService.getCompletedChallenges()
-                    ])
-                    
-                    const activeChallengesData = activeResponse.challenges || []
-                    const completedChallengesData = completedResponse.challenges || []
-                    
-                    setActiveChallenges(activeChallengesData)
-                    setCompletedChallenges(completedChallengesData)
-                    setFilteredChallenges(showCompleted ? completedChallengesData : activeChallengesData)
-                    setChallengesList(activeChallengesData)
-                    
-                      activeChallengesData.slice(0, 3).forEach((challenge: Challenge, index: number) => {
-                        setTimeout(() => {
-                          preloadChallenge(challenge._id).catch(console.error)
-                        }, index * 100)
-                      })
-                    } catch (error) {
-                      setActiveChallenges([])
-                      setCompletedChallenges([])
-                    } finally {
-                      setLoading(false)
-                    }
-                  }} />
-              )}
-
-              {isAuthenticated && user?.walletAddress === '0x21bee69e692ceb4c02b66c7a45620684904ba395' && (
-                <div className="flex items-center space-x-2">
-                  <button
-                    onClick={() => { setShowDuels(false); setSelectedPriceFilter(null); }}
-                    className={`text-xs font-medium ${!showDuels ? 'text-black' : 'text-gray-500'}`}
-                  >Challenges</button>
-                  <button
-                    onClick={() => { setShowDuels(true); setSelectedPriceFilter(null); }}
-                    className={`text-xs font-medium ${showDuels ? 'text-black' : 'text-gray-500'}`}
-                  >1v1</button>
-                </div>
+              {gameMode && (
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => {
+                    setGameMode(null)
+                    setSelectedPriceFilter(null)
+                  }}
+                  className="flex items-center space-x-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium text-gray-700 transition-all duration-200"
+                >
+                  <span>←</span>
+                  <span>Back to Mode Selection</span>
+                </motion.button>
               )}
               
               {/* Telegram Join Button */}
@@ -305,19 +273,13 @@ function HomePage() {
       <div className="pt-24 pb-12 px-4 md:px-6">
         <div className="max-w-4xl mx-auto">
           
-          {/* Hero */}
+          {/* Hero simplifié */}
           <motion.div
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-center mb-20"
+            className="text-center mb-8"
           >
-            <h2 className="text-5xl md:text-7xl font-light text-black mb-8 leading-none tracking-tight">
-              THE ULTIMATE
-              <br />
-              <span className="bg-gradient-to-r from-black via-gray-700 to-black bg-clip-text text-transparent">ENDURANCE CHALLENGE</span>
-            </h2>
-            
-            <div className="flex flex-col items-center space-y-4 mt-8">
+            <div className="flex flex-col items-center space-y-4">
               {isAuthenticated && (
                 <div className="flex flex-col items-center space-y-1">
                   <HodlBalance className="text-base px-6 py-3" />
@@ -326,11 +288,10 @@ function HomePage() {
                   </p>
                 </div>
               )}
-              
             </div>
           </motion.div>
 
-          {/* Challenges */}
+          {/* Mode Selection ou Challenges */}
           {!isAuthenticated ? (
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
@@ -344,122 +305,300 @@ function HomePage() {
                 Connect Wallet
               </AceternityButton>
             </motion.div>
-          ) : filteredChallenges.length === 0 ? (
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }}
+          ) : !gameMode ? (
+            /* Sélecteur de mode simplifié et élégant */
+            <motion.div
+              initial={{ opacity: 0, y: 40 }}
               animate={{ opacity: 1, y: 0 }}
-              className="text-center"
+              className="max-w-5xl mx-auto"
             >
-              <p className="text-gray-500 mb-6">
-                {selectedPriceFilter !== null 
-                  ? `No challenges with ${selectedPriceFilter} WLD entry fee` 
-                  : "No active challenges"
-                }
-              </p>
-              <AceternityButton 
-                onClick={async () => {
-                  try {
-                    await apiService.initDefaultChallenges()
-                    const response = await apiService.getActiveChallenges()
-                    const challenges = response.challenges || []
-                    setActiveChallenges(challenges)
-                    setFilteredChallenges(challenges)
-                    // Mettre à jour le cache des challenges
-                    setChallengesList(challenges)
-                    // Précharger les nouveaux challenges
-                    challenges.slice(0, 3).forEach((challenge: Challenge, index: number) => {
-                      setTimeout(() => {
-                        preloadChallenge(challenge._id).catch(console.error)
-                      }, index * 100)
-                    })
-                  } catch (error) {
-                    console.error('Error creating challenges:', error)
-                  }
-                }}
-                className="bg-black text-white px-6 py-3 rounded-full text-sm font-medium hover:bg-gray-900 transition-all duration-200 border-none"
+              <div className="text-center mb-8">
+                <h3 className="text-2xl md:text-3xl font-light text-black mb-3 leading-none tracking-tight">Choose Your Mode</h3>
+                <p className="apple-text-secondary text-sm">Select how you want to compete</p>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* 1v1 Duel Mode Card - En premier */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.1 }}
+                  whileHover={{ scale: 1.01, y: -2 }}
+                  whileTap={{ scale: 0.99 }}
+                  onClick={() => setGameMode('1v1')}
+                  className="group apple-card challenge-card duel-card hover:shadow-apple-xl transition-all duration-500 cursor-pointer"
+                  style={{ userSelect: 'none' }}
+                >
+                  {/* Header compact */}
+                  <div className="px-6 pt-4 pb-3 border-b border-gray-50">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="flex items-center space-x-2 mb-1">
+                          <div className="w-1.5 h-1.5 rounded-full bg-red-400"></div>
+                          <span className="apple-text-primary text-base font-medium apple-text-depth">⚔️ 1v1 Duel</span>
+                          <div className="px-1.5 py-0.5 rounded bg-red-50">
+                            <span className="text-[9px] font-medium tracking-wide text-red-600">DUEL</span>
+                          </div>
+                        </div>
+                        <p className="apple-text-secondary text-xs">Face off head-to-head</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Contenu ultra-compact */}
+                  <div className="px-6 py-4">
+                    <div className="text-center">
+                      <p className="apple-text-primary text-sm mb-4">
+                        Just 2 players battle<br/>
+                        <span className="apple-text-secondary text-xs">Winner takes most</span>
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Footer compact */}
+                  <div className="px-6 pb-4">
+                    <button
+                      type="button"
+                      className="w-full py-3 rounded-lg text-sm font-medium transition-all duration-300 apple-focus bg-gradient-to-r from-red-600 to-red-700 text-white hover:from-red-700 hover:to-red-800 active:scale-98 shadow-lg hover:shadow-xl"
+                      style={{ outline: 'none' }}
+                    >
+                      <span className="flex items-center justify-center space-x-2">
+                        <span>⚔️</span>
+                        <span>Enter Duel</span>
+                      </span>
+                    </button>
+                  </div>
+                </motion.div>
+                
+                {/* Multi-Player Mode Card */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
+                  whileHover={{ scale: 1.01, y: -2 }}
+                  whileTap={{ scale: 0.99 }}
+                  onClick={() => setGameMode('multiplayer')}
+                  className="group apple-card challenge-card hover:shadow-apple-xl transition-all duration-500 cursor-pointer"
+                  style={{ userSelect: 'none' }}
+                >
+                  {/* Header compact */}
+                  <div className="px-6 pt-4 pb-3 border-b border-gray-50">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="flex items-center space-x-2 mb-1">
+                          <div className="w-1.5 h-1.5 rounded-full bg-blue-400"></div>
+                          <span className="apple-text-primary text-base font-medium apple-text-depth">🏆 Multi-Player</span>
+                          <div className="px-1.5 py-0.5 rounded bg-blue-50">
+                            <span className="text-[9px] font-medium tracking-wide text-blue-600">TOURNAMENT</span>
+                          </div>
+                        </div>
+                        <p className="apple-text-secondary text-xs">Compete against thousands</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Contenu ultra-compact */}
+                  <div className="px-6 py-4">
+                    <div className="text-center">
+                      <p className="apple-text-primary text-sm mb-4">
+                        Join massive tournaments<br/>
+                        <span className="apple-text-secondary text-xs">Top 3 share prize pool</span>
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Footer compact */}
+                  <div className="px-6 pb-4">
+                    <button
+                      type="button"
+                      className="w-full py-3 rounded-lg text-sm font-medium transition-all duration-300 apple-focus bg-black text-white hover:bg-gray-900 active:scale-98 shadow-apple-small hover:shadow-apple-medium"
+                      style={{ outline: 'none' }}
+                    >
+                      <span className="flex items-center justify-center space-x-2">
+                        <span>🏆</span>
+                        <span>Enter Tournament</span>
+                      </span>
+                    </button>
+                  </div>
+                </motion.div>
+              </div>
+              
+              {/* Quick Game Option */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 }}
+                className="text-center mt-6"
               >
-                Create Challenge
-              </AceternityButton>
+                <button 
+                  onClick={() => setShowQuickGame(true)}
+                  className="apple-text-secondary hover:apple-text-primary transition-colors text-sm font-medium"
+                >
+                  Try demo first
+                </button>
+              </motion.div>
             </motion.div>
-          ) : (
-            <div>
-              {/* Onglets Active/Completed */}
+          ) : gameMode ? (
+            <div className="max-w-6xl mx-auto">
+              {/* Header Section - Titre minimaliste */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="text-center mb-16"
+              >
+                <div className="flex items-center justify-center space-x-3 mb-4">
+                  <div className={`w-2 h-2 rounded-full ${
+                    gameMode === '1v1' ? 'bg-black' : 'bg-black'
+                  }`}></div>
+                  <h1 className="text-4xl font-light text-black tracking-tight">
+                    {gameMode === '1v1' ? 'Duels' : 'Tournaments'}
+                  </h1>
+                  <div className={`w-2 h-2 rounded-full ${
+                    gameMode === '1v1' ? 'bg-black' : 'bg-black'
+                  }`}></div>
+                </div>
+                <p className="text-gray-500 text-lg font-light max-w-md mx-auto">
+                  {gameMode === '1v1' 
+                    ? 'Face-to-face competition. Winner takes most.'
+                    : 'Compete against thousands. Top 3 share rewards.'
+                  }
+                </p>
+              </motion.div>
+
+
+              {/* Onglets Active/Past/My Duels avec boutons de création subtils */}
               <motion.div 
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="mb-6"
+                className="mb-12"
               >
-                <div className="flex justify-center">
-                  <div className="flex items-center space-x-1 bg-gray-50/80 rounded-full p-1 backdrop-blur-sm">
+                <div className="flex flex-col items-center space-y-4">
+                  {/* Onglets principaux */}
+                  <div className="flex items-center space-x-0 bg-white border border-gray-200 rounded-xl p-1">
                     <button
-                      onClick={() => setShowCompleted(false)}
-                      className={`px-6 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
-                        !showCompleted
-                          ? 'bg-white text-black shadow-sm'
-                          : 'text-gray-600 hover:text-black'
+                      onClick={() => {
+                        setShowCompleted(false)
+                        setShowMyDuels(false)
+                      }}
+                      className={`px-6 py-3 rounded-lg text-sm font-medium transition-all duration-300 ${
+                        !showCompleted && !showMyDuels
+                          ? 'bg-black text-white shadow-sm'
+                          : 'text-gray-600 hover:text-black hover:bg-gray-50'
                       }`}
                     >
-                      Active ({activeChallenges.length})
+                      Active ({activeChallenges.filter(ch => gameMode === '1v1' ? ch.maxParticipants === 2 : ch.maxParticipants !== 2).length})
                     </button>
                     <button
-                      onClick={() => setShowCompleted(true)}
-                      className={`px-6 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
-                        showCompleted
-                          ? 'bg-white text-black shadow-sm'
-                          : 'text-gray-600 hover:text-black'
+                      onClick={() => {
+                        setShowCompleted(true)
+                        setShowMyDuels(false)
+                      }}
+                      className={`px-6 py-3 rounded-lg text-sm font-medium transition-all duration-300 ${
+                        showCompleted && !showMyDuels
+                          ? 'bg-black text-white shadow-sm'
+                          : 'text-gray-600 hover:text-black hover:bg-gray-50'
                       }`}
                     >
-                      Completed ({completedChallenges.length})
+                      Past ({completedChallenges.filter(ch => gameMode === '1v1' ? ch.maxParticipants === 2 : ch.maxParticipants !== 2).length})
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowCompleted(false)
+                        setShowMyDuels(true)
+                      }}
+                      className={`px-6 py-3 rounded-lg text-sm font-medium transition-all duration-300 ${
+                        showMyDuels
+                          ? 'bg-black text-white shadow-sm'
+                          : 'text-gray-600 hover:text-black hover:bg-gray-50'
+                      }`}
+                    >
+                      My {gameMode === '1v1' ? 'Duels' : 'Tournaments'}
                     </button>
                   </div>
+                  
+                  {/* Boutons de création subtils - uniquement en mode 1v1 et pas en mode completed/myduels */}
+                  {gameMode === '1v1' && !showCompleted && !showMyDuels && (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: 0.2 }}
+                      className="bg-gray-50 border border-gray-200 rounded-lg p-3"
+                    >
+                      <AddDuelChallengeForm
+                        onSuccess={async () => {
+                          try {
+                            const [activeResponse, completedResponse] = await Promise.all([
+                              apiService.getActiveChallenges(),
+                              apiService.getCompletedChallenges()
+                            ])
+                            const activeChallengesData = activeResponse.challenges || []
+                            const completedChallengesData = completedResponse.challenges || []
+                            setActiveChallenges(activeChallengesData)
+                            setCompletedChallenges(completedChallengesData)
+                            setFilteredChallenges(showMyDuels ? [...activeChallengesData, ...completedChallengesData].filter(ch => {
+                              const userHash = user?.worldcoin?.nullifier_hash
+                              if (!userHash) return false
+                              const isCreatedByUser = ch.createdBy === userHash || ch.creator === userHash
+                              const isParticipating = ch.participants && ch.participants.some(p => 
+                                p.user === userHash || p.userId === userHash || p.userHash === userHash
+                              )
+                              return isCreatedByUser || isParticipating
+                            }) : (showCompleted ? completedChallengesData : activeChallengesData))
+                            setChallengesList(activeChallengesData)
+                          } catch (error) {
+                            console.error('Error refreshing challenges:', error)
+                          }
+                        }}
+                      />
+                    </motion.div>
+                  )}
                 </div>
               </motion.div>
 
-              {/* Filtres et pagination */}
+              {/* Filtres par prix - Design ultra-minimaliste */}
               <motion.div 
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="mb-8 space-y-6"
+                className="mb-12"
               >
-                {/* Filtres par prix */}
                 <div className="flex justify-center">
-                  <div className="flex items-center space-x-1 bg-gray-50/80 rounded-full p-1 backdrop-blur-sm">
+                  <div className="flex items-center space-x-0 bg-white border border-gray-200 rounded-xl p-1">
                     <button
                       onClick={() => setSelectedPriceFilter(null)}
-                      className={`px-4 py-2 rounded-full text-xs font-medium transition-all duration-200 ${
+                      className={`px-6 py-2.5 rounded-lg text-sm font-medium transition-all duration-300 ${
                         selectedPriceFilter === null
-                          ? 'bg-white text-black shadow-sm'
-                          : 'text-gray-600 hover:text-black'
+                          ? 'bg-black text-white'
+                          : 'text-gray-600 hover:text-black hover:bg-gray-50'
                       }`}
                     >
                       All
                     </button>
                     <button
                       onClick={() => setSelectedPriceFilter(1)}
-                      className={`px-4 py-2 rounded-full text-xs font-medium transition-all duration-200 ${
+                      className={`px-6 py-2.5 rounded-lg text-sm font-medium transition-all duration-300 ${
                         selectedPriceFilter === 1
-                          ? 'bg-white text-black shadow-sm'
-                          : 'text-gray-600 hover:text-black'
+                          ? 'bg-black text-white'
+                          : 'text-gray-600 hover:text-black hover:bg-gray-50'
                       }`}
                     >
                       1 WLD
                     </button>
                     <button
                       onClick={() => setSelectedPriceFilter(5)}
-                      className={`px-4 py-2 rounded-full text-xs font-medium transition-all duration-200 ${
+                      className={`px-6 py-2.5 rounded-lg text-sm font-medium transition-all duration-300 ${
                         selectedPriceFilter === 5
-                          ? 'bg-white text-black shadow-sm'
-                          : 'text-gray-600 hover:text-black'
+                          ? 'bg-black text-white'
+                          : 'text-gray-600 hover:text-black hover:bg-gray-50'
                       }`}
                     >
                       5 WLD
                     </button>
                     <button
                       onClick={() => setSelectedPriceFilter(10)}
-                      className={`px-4 py-2 rounded-full text-xs font-medium transition-all duration-200 ${
+                      className={`px-6 py-2.5 rounded-lg text-sm font-medium transition-all duration-300 ${
                         selectedPriceFilter === 10
-                          ? 'bg-white text-black shadow-sm'
-                          : 'text-gray-600 hover:text-black'
+                          ? 'bg-black text-white'
+                          : 'text-gray-600 hover:text-black hover:bg-gray-50'
                       }`}
                     >
                       10 WLD
@@ -467,183 +606,205 @@ function HomePage() {
                   </div>
                 </div>
 
-                {/* Indicateur de résultats */}
-                <div className="text-center">
-                  <p className="text-xs text-gray-500">
-                    {selectedPriceFilter !== null ? (
-                      <>Showing {filteredChallenges.length} {showDuels ? 'duel' : 'challenge'}{filteredChallenges.length !== 1 ? 's' : ''} with {selectedPriceFilter} WLD entry fee</>
-                    ) : (
-                      <>Showing {filteredChallenges.length} {showDuels ? 'duel' : 'challenge'}{filteredChallenges.length !== 1 ? 's' : ''}</>
-                    )}
+                {/* Compteur de résultats simple */}
+                <div className="text-center mt-6">
+                  <p className="text-sm text-gray-500 font-light">
+                    {filteredChallenges.length} {gameMode === '1v1' ? 'duel' : 'tournament'}{filteredChallenges.length !== 1 ? 's' : ''} {selectedPriceFilter !== null ? `· ${selectedPriceFilter} WLD` : ''}
                   </p>
                 </div>
               </motion.div>
 
-              {/* Liste des challenges */}
-              <motion.div 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="space-y-6"
-              >
-                {paginatedChallenges.map((challenge, index) => (
-                <motion.div
-                  key={challenge._id}
+              {/* Liste des challenges OU message d'état vide */}
+              {filteredChallenges.length === 0 ? (
+                <motion.div 
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.08 }}
-                  className="group apple-card challenge-card hover:shadow-apple-xl transition-all duration-500 cursor-pointer"
+                  className="text-center py-16"
+                >
+                  <div className="max-w-md mx-auto">
+                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                      <span className="text-2xl text-gray-400">
+                        {gameMode === '1v1' ? '⚔️' : '🏆'}
+                      </span>
+                    </div>
+                    
+                    <h3 className="text-xl font-light text-black mb-3">
+                      {showMyDuels 
+                        ? `No ${gameMode === '1v1' ? 'duels' : 'tournaments'} yet`
+                        : selectedPriceFilter !== null 
+                        ? `No ${gameMode === '1v1' ? 'duels' : 'tournaments'} found`
+                        : `No ${gameMode === '1v1' ? 'duels' : 'tournaments'} available`
+                      }
+                    </h3>
+                    
+                    <p className="text-gray-500 mb-8 leading-relaxed">
+                      {showMyDuels 
+                        ? `You haven't created or joined any ${gameMode === '1v1' ? 'duels' : 'tournaments'} yet. Create one or join an existing one to see it here.`
+                        : selectedPriceFilter !== null 
+                        ? `Try a different price filter or check back later.`
+                        : `${gameMode === '1v1' ? 'New duels' : 'New tournaments'} are created regularly. Check back soon or try the demo.`
+                      }
+                    </p>
+
+                    <div className="space-y-4">
+                      {showMyDuels && gameMode === '1v1' && (
+                        <AddDuelChallengeForm
+                          onSuccess={async () => {
+                            try {
+                              const [activeResponse, completedResponse] = await Promise.all([
+                                apiService.getActiveChallenges(),
+                                apiService.getCompletedChallenges()
+                              ])
+                              const activeChallengesData = activeResponse.challenges || []
+                              const completedChallengesData = completedResponse.challenges || []
+                              setActiveChallenges(activeChallengesData)
+                              setCompletedChallenges(completedChallengesData)
+                              setFilteredChallenges([...activeChallengesData, ...completedChallengesData].filter(ch => {
+                                const userHash = user?.worldcoin?.nullifier_hash
+                                if (!userHash) return false
+                                const isCreatedByUser = ch.createdBy === userHash || ch.creator === userHash
+                                const isParticipating = ch.participants && ch.participants.some(p => 
+                                  p.user === userHash || p.userId === userHash || p.userHash === userHash
+                                )
+                                return isCreatedByUser || isParticipating
+                              }))
+                              setChallengesList(activeChallengesData)
+                            } catch (error) {
+                              console.error('Error refreshing challenges:', error)
+                            }
+                          }}
+                        />
+                      )}
+                      
+                      <button 
+                        onClick={() => setShowQuickGame(true)}
+                        className="bg-black text-white px-8 py-3 rounded-xl text-sm font-medium hover:bg-gray-800 transition-all duration-300"
+                      >
+                        Try Demo
+                      </button>
+                    </div>
+                  </div>
+                </motion.div>
+              ) : (
+                <motion.div 
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className={gameMode === '1v1' ? 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8' : 'grid grid-cols-1 max-w-3xl mx-auto gap-6'}
+                >
+                  {paginatedChallenges.map((challenge, index) => (
+                <motion.div
+                  key={challenge._id}
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.1, duration: 0.6, ease: "easeOut" }}
+                  whileHover={{ y: -8, transition: { duration: 0.3 } }}
+                  className="group bg-white border border-gray-200 rounded-2xl hover:border-gray-300 hover:shadow-lg transition-all duration-500 cursor-pointer overflow-hidden"
                   style={{ userSelect: 'none' }}
                   onMouseEnter={() => preloadChallengeOnHover(challenge._id)}
                   onTouchStart={() => preloadChallengeOnHover(challenge._id)}
                   onClick={(e) => handleChallengeClick(challenge._id, e)}
                 >
-                  {/* Header minimaliste */}
-                  <div className="px-8 pt-6 pb-4 border-b border-gray-50">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <div className="flex items-center space-x-3 mb-1">
-                          <div className={`w-1.5 h-1.5 rounded-full ${
+                  {/* Header ultra-minimaliste */}
+                  <div className="px-8 pt-8 pb-6">
+                    <div className="flex items-start justify-between mb-6">
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-2 mb-3">
+                          <div className={`w-2 h-2 rounded-full ${
                             challenge.status === 'completed' 
                               ? 'bg-gray-400' 
-                              : 'bg-emerald-400 status-pulse'
+                              : 'bg-black'
                           }`}></div>
-                          <span className="apple-text-primary text-sm font-medium apple-text-depth">
-                            {showCompleted ? challenge.title : `Challenge #${index + 1}`}
+                          <span className="text-lg font-light text-black tracking-tight">
+                            {gameMode === '1v1' ? `Duel #${index + 1}` : `Tournament #${index + 1}`}
                           </span>
-                          <div className={`px-2 py-0.5 rounded-md ${
-                            challenge.status === 'completed'
-                              ? 'bg-gray-50'
-                              : 'bg-emerald-50'
-                          }`}>
-                            <span className={`text-[10px] font-medium tracking-wide ${
-                              challenge.status === 'completed'
-                                ? 'text-gray-600'
-                                : 'text-emerald-600'
-                            }`}>
-                              {challenge.status === 'completed' ? 'COMPLETED' : 'LIVE'}
-                            </span>
-                          </div>
-                        </div>
-                        <p className="apple-text-secondary text-xs">
-                          {challenge.status === 'completed' 
-                            ? 'Challenge finished - View leaderboard' 
-                            : 'Top 3 longest holders win'
-                          }
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Contenu principal */}
-                  <div className="px-8 py-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-                      
-                      {/* Entry Fee - Design ultra-minimaliste Apple */}
-                      <div className="space-y-4">
-                        <span className="apple-text-secondary text-[10px] uppercase tracking-[0.5px] font-medium">Entry Requirement</span>
-                        
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between py-3 px-3 bg-gray-50/40 rounded-md border border-gray-100/50">
-                            <div className="flex items-center space-x-3">
-                              <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
-                              <span className="apple-text-primary text-xs font-medium">Entry Cost</span>
-                            </div>
-                            <div className="flex items-center space-x-1.5">
-                              <span className="apple-text-primary text-lg font-semibold tabular-nums apple-text-depth">{challenge.participationPrice}</span>
-                              <Image src="/WLD.png" alt="WLD" width={14} height={14} className="opacity-70" />
-                            </div>
-                          </div>
                           
-                          {/* Participation indicator */}
-                          <div className="flex items-center justify-between py-2 px-3">
-                            <span className="apple-text-secondary text-[10px] font-medium">Participants</span>
-                            <div className="flex items-center space-x-2">
-                              <div className="w-20 bg-gray-100 rounded-full h-1">
-                                <div 
-                                  className="bg-blue-400 h-1 rounded-full transition-all duration-500"
-                                  style={{ width: `${(challenge.currentParticipants / challenge.maxParticipants) * 100}%` }}
-                                ></div>
-                              </div>
-                              <span className="apple-text-secondary text-xs font-medium tabular-nums">
-                                {challenge.currentParticipants}/{challenge.maxParticipants}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Prize Pool - Design ultra-minimaliste Apple */}
-                      <div className="space-y-4">
-                        <span className="apple-text-secondary text-[10px] uppercase tracking-[0.5px] font-medium">Prize Distribution</span>
-                        
-                        {/* Liste verticale des prizes */}
-                        <div className="space-y-2">
-                          <div className="flex items-center justify-between py-2 px-3 bg-gray-50/50 rounded-md hover:bg-gray-50 transition-colors">
-                            <div className="flex items-center space-x-3">
-                              <div className="w-2 h-2 bg-yellow-400 rounded-full"></div>
-                              <span className="apple-text-primary text-xs font-medium">1st Place</span>
-                            </div>
-                            <div className="flex items-center space-x-1.5">
-                              <span className="apple-text-primary text-sm font-semibold tabular-nums">{challenge.firstPrize}</span>
-                              <Image src="/WLD.png" alt="WLD" width={12} height={12} className="opacity-70" />
-                            </div>
-                          </div>
-                          
-                          <div className="flex items-center justify-between py-2 px-3 bg-gray-50/30 rounded-md hover:bg-gray-50/50 transition-colors">
-                            <div className="flex items-center space-x-3">
-                              <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
-                              <span className="apple-text-secondary text-xs font-medium">2nd Place</span>
-                            </div>
-                            <div className="flex items-center space-x-1.5">
-                              <span className="apple-text-primary text-sm font-medium tabular-nums">{challenge.secondPrize}</span>
-                              <Image src="/WLD.png" alt="WLD" width={12} height={12} className="opacity-70" />
-                            </div>
-                          </div>
-                          
-                          <div className="flex items-center justify-between py-2 px-3 bg-gray-50/20 rounded-md hover:bg-gray-50/40 transition-colors">
-                            <div className="flex items-center space-x-3">
-                              <div className="w-2 h-2 bg-orange-400 rounded-full"></div>
-                              <span className="apple-text-secondary text-xs font-medium">3rd Place</span>
-                            </div>
-                            <div className="flex items-center space-x-1.5">
-                              <span className="apple-text-primary text-sm font-medium tabular-nums">{challenge.thirdPrize}</span>
-                              <Image src="/WLD.png" alt="WLD" width={12} height={12} className="opacity-70" />
-                            </div>
-                          </div>
-                          
-                          {/* Total prize pool subtle indicator */}
-                          <div className="pt-2 mt-2 border-t border-gray-100">
-                            <div className="flex items-center justify-between">
-                              <span className="apple-text-secondary text-[10px] font-medium">Total Pool</span>
-                              <div className="flex items-center space-x-1">
-                                <span className="apple-text-secondary text-xs font-medium tabular-nums">
-                                  {(Number(challenge.firstPrize) + Number(challenge.secondPrize) + Number(challenge.thirdPrize)) || 0}
+                          {/* Indicateur My Duels */}
+                          {showMyDuels && user?.worldcoin?.nullifier_hash && (
+                            <div className="flex items-center space-x-1">
+                              {(challenge.createdBy === user.worldcoin.nullifier_hash || challenge.creator === user.worldcoin.nullifier_hash) ? (
+                                <span className="text-xs bg-black text-white px-2 py-0.5 rounded-full font-medium">
+                                  Created
                                 </span>
-                                <span className="apple-text-secondary text-[10px]">WLD</span>
-                              </div>
+                              ) : (
+                                <span className="text-xs bg-gray-200 text-gray-700 px-2 py-0.5 rounded-full font-medium">
+                                  Joined
+                                </span>
+                              )}
                             </div>
+                          )}
+                        </div>
+                        
+                        <div className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
+                          challenge.status === 'completed'
+                            ? 'bg-gray-100 text-gray-600'
+                            : 'bg-black text-white'
+                        }`}>
+                          {challenge.status === 'completed' ? 'Finished' : 'Live'}
+                        </div>
+                      </div>
+                      
+                      <div className="text-right">
+                        <div className="flex items-center space-x-1">
+                          <span className="text-2xl font-light text-black">{challenge.participationPrice}</span>
+                          <Image src="/WLD.png" alt="WLD" width={20} height={20} className="opacity-60" />
+                        </div>
+                        <p className="text-xs text-gray-500 mt-1">Entry Fee</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Stats section - Minimaliste et clair */}
+                  <div className="px-8 pb-6">
+                    {/* Participants */}
+                    <div className="flex items-center justify-between py-4 border-b border-gray-100">
+                      <span className="text-sm text-gray-600 font-medium">Participants</span>
+                      <div className="flex items-center space-x-3">
+                        <div className="w-24 bg-gray-200 rounded-full h-1.5">
+                          <div 
+                            className="bg-black h-1.5 rounded-full transition-all duration-700 ease-out"
+                            style={{ width: `${Math.min((challenge.currentParticipants / challenge.maxParticipants) * 100, 100)}%` }}
+                          ></div>
+                        </div>
+                        <span className="text-sm font-medium text-black tabular-nums min-w-[40px]">
+                          {challenge.currentParticipants}/{challenge.maxParticipants}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Prize Distribution */}
+                    <div className="space-y-3 pt-4">
+                      <p className="text-sm text-gray-600 font-medium mb-3">Prize Pool</p>
+                      
+                      <div className="grid grid-cols-3 gap-4">
+                        <div className="text-center">
+                          <div className="flex items-center justify-center space-x-1 mb-1">
+                            <span className="text-lg font-light text-black">{challenge.firstPrize}</span>
+                            <Image src="/WLD.png" alt="WLD" width={14} height={14} className="opacity-60" />
                           </div>
+                          <p className="text-xs text-gray-500">1st</p>
+                        </div>
+                        
+                        <div className="text-center">
+                          <div className="flex items-center justify-center space-x-1 mb-1">
+                            <span className="text-lg font-light text-black">{challenge.secondPrize}</span>
+                            <Image src="/WLD.png" alt="WLD" width={14} height={14} className="opacity-60" />
+                          </div>
+                          <p className="text-xs text-gray-500">2nd</p>
+                        </div>
+                        
+                        <div className="text-center">
+                          <div className="flex items-center justify-center space-x-1 mb-1">
+                            <span className="text-lg font-light text-black">{challenge.thirdPrize}</span>
+                            <Image src="/WLD.png" alt="WLD" width={14} height={14} className="opacity-60" />
+                          </div>
+                          <p className="text-xs text-gray-500">3rd</p>
                         </div>
                       </div>
                     </div>
                   </div>
 
-                  {/* Footer avec boutons */}
-                  <div className="px-8 pb-6 space-y-4">
-                    {/* Demo Button */}
-                    <div className="text-center">
-                      <button 
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          setShowQuickGame(true)
-                        }}
-                        className="apple-text-secondary hover:apple-text-primary transition-colors text-xs font-medium"
-                      >
-                        Try demo first
-                      </button>
-                    </div>
-
-                    {/* Join Button - Style Apple */}
+                  {/* Footer avec action button */}
+                  <div className="px-8 pb-8">
                     <button
                       type="button"
                       onPointerDown={(e) => {
@@ -666,45 +827,59 @@ function HomePage() {
                       }}
                       onMouseEnter={() => preloadChallengeOnHover(challenge._id)}
                       disabled={navigatingToChallengeId === challenge._id && challenge.status !== 'completed'}
-                      className={`w-full py-3 rounded-lg text-sm font-medium transition-all duration-300 apple-focus ${
+                      className={`w-full py-4 rounded-xl text-sm font-medium transition-all duration-300 ${
                         challenge.status === 'completed'
                           ? 'bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200'
                           : navigatingToChallengeId === challenge._id
-                          ? 'bg-gray-100 apple-text-secondary cursor-not-allowed'
-                          : 'bg-black text-white hover:bg-gray-900 active:scale-98 shadow-apple-small hover:shadow-apple-medium'
+                          ? 'bg-gray-100 text-gray-500 cursor-not-allowed'
+                          : 'bg-black text-white hover:bg-gray-800 active:scale-[0.98] shadow-sm hover:shadow-md'
                       }`}
                       style={{ outline: 'none' }}
                     >
                       {challenge.status === 'completed' ? (
-                        <span>View Leaderboard</span>
+                        <span>View Results</span>
                       ) : navigatingToChallengeId === challenge._id ? (
                         <div className="flex items-center justify-center space-x-2">
-                          <div className="w-3 h-3 border border-gray-400 border-t-transparent rounded-full animate-spin"></div>
+                          <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div>
                           <span>Joining...</span>
                         </div>
                       ) : (
-                        <span>Join Challenge</span>
+                        <span>{gameMode === '1v1' ? 'Join Duel' : 'Join Tournament'}</span>
                       )}
                     </button>
+                    
+                    {/* Demo link subtle */}
+                    <div className="text-center mt-4">
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setShowQuickGame(true)
+                        }}
+                        className="text-xs text-gray-400 hover:text-gray-600 transition-colors font-medium"
+                      >
+                        Try demo first
+                      </button>
+                    </div>
                   </div>
                 </motion.div>
-              ))}
-              </motion.div>
+                  ))}
+                </motion.div>
+              )}
 
-              {/* Pagination */}
+              {/* Pagination minimaliste */}
               {totalPages > 1 && (
                 <motion.div 
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="flex justify-center items-center space-x-2 mt-12"
+                  className="flex justify-center items-center space-x-1 mt-16"
                 >
                   <button
                     onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                     disabled={currentPage === 1}
-                    className={`w-8 h-8 rounded-full text-xs font-medium transition-all duration-200 ${
+                    className={`w-10 h-10 rounded-xl text-sm font-medium transition-all duration-300 ${
                       currentPage === 1
                         ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                        : 'bg-white text-black hover:bg-gray-50 shadow-sm hover:shadow-md'
+                        : 'bg-white text-black hover:bg-gray-50 border border-gray-200 hover:border-gray-300'
                     }`}
                   >
                     ←
@@ -714,10 +889,10 @@ function HomePage() {
                     <button
                       key={page}
                       onClick={() => setCurrentPage(page)}
-                      className={`w-8 h-8 rounded-full text-xs font-medium transition-all duration-200 ${
+                      className={`w-10 h-10 rounded-xl text-sm font-medium transition-all duration-300 ${
                         currentPage === page
-                          ? 'bg-black text-white shadow-md'
-                          : 'bg-white text-black hover:bg-gray-50 shadow-sm hover:shadow-md'
+                          ? 'bg-black text-white'
+                          : 'bg-white text-black hover:bg-gray-50 border border-gray-200 hover:border-gray-300'
                       }`}
                     >
                       {page}
@@ -727,10 +902,10 @@ function HomePage() {
                   <button
                     onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                     disabled={currentPage === totalPages}
-                    className={`w-8 h-8 rounded-full text-xs font-medium transition-all duration-200 ${
+                    className={`w-10 h-10 rounded-xl text-sm font-medium transition-all duration-300 ${
                       currentPage === totalPages
                         ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                        : 'bg-white text-black hover:bg-gray-50 shadow-sm hover:shadow-md'
+                        : 'bg-white text-black hover:bg-gray-50 border border-gray-200 hover:border-gray-300'
                     }`}
                   >
                     →
@@ -738,7 +913,7 @@ function HomePage() {
                 </motion.div>
               )}
             </div>
-          )}
+          ) : null}
         </div>
       </div>
 

@@ -24,7 +24,7 @@ console.log('🔍 [SERVER DEBUG] WORLD_APP_ID:', process.env.WORLD_APP_ID);
 console.log('🔍 [SERVER DEBUG] Working directory:', process.cwd());
 console.log('🔍 [SERVER DEBUG] All env vars with TOKEN:', Object.keys(process.env).filter(key => key.includes('TOKEN')));
 const app = (0, express_1.default)();
-const PORT = Number(process.env.PORT) || 8080;
+const PORT = Number(process.env.PORT) || 3001;
 // Configuration CORS pour Railway et autres environnements
 const corsOptions = {
     origin: [
@@ -32,6 +32,7 @@ const corsOptions = {
         'http://localhost:3001', // Frontend local
         'http://localhost:3000', // Frontend local alternatif
         'https://screen-production.up.railway.app', // Railway backend
+        'https://a1d104aa1994.ngrok.app',
         /^https:\/\/.*\.railway\.app$/, // Tous les domaines Railway
         /^https:\/\/.*\.ngrok\.app$/, // Tous les domaines ngrok
         /^https:\/\/.*\.ngrok-free\.app$/, // Nouveaux domaines ngrok
