@@ -111,7 +111,7 @@ function HomePage() {
         const isCreatedByUser = (ch.createdBy && ch.createdBy === userId) || (ch.creator && ch.creator === userId)
         
         // Duels auxquels l'utilisateur participe
-        const isParticipating = ch.participants && ch.participants.some(p => 
+        const isParticipating = ch.participants && ch.participants.some((p: { user?: string; userId?: string; userHash?: string; walletAddress?: string }) => 
           (p.user && p.user === userId) || 
           (p.userId && p.userId === userId) || 
           (p.userHash && p.userHash === userId) ||
@@ -550,7 +550,7 @@ function HomePage() {
                               const userId = user?.id || user?.walletAddress
                               if (!userId) return false
                               const isCreatedByUser = (ch.createdBy && ch.createdBy === userId) || (ch.creator && ch.creator === userId)
-                              const isParticipating = ch.participants && ch.participants.some(p => 
+                              const isParticipating = ch.participants && ch.participants.some((p: { user?: string; userId?: string; userHash?: string; walletAddress?: string }) => 
                                 (p.user && p.user === userId) || (p.userId && p.userId === userId) || (p.userHash && p.userHash === userId) || (p.walletAddress && p.walletAddress === userId)
                               )
                               return isCreatedByUser || isParticipating
@@ -674,7 +674,7 @@ function HomePage() {
                                 const userId = user?.id || user?.walletAddress
                                 if (!userId) return false
                                 const isCreatedByUser = (ch.createdBy && ch.createdBy === userId) || (ch.creator && ch.creator === userId)
-                                const isParticipating = ch.participants && ch.participants.some(p => 
+                                const isParticipating = ch.participants && ch.participants.some((p: { user?: string; userId?: string; userHash?: string; walletAddress?: string }) => 
                                   (p.user && p.user === userId) || (p.userId && p.userId === userId) || (p.userHash && p.userHash === userId) || (p.walletAddress && p.walletAddress === userId)
                                 )
                                 return isCreatedByUser || isParticipating
