@@ -22,8 +22,12 @@ const TYPES = {
 }
 
 async function testVoucherGeneration() {
-  // Clé privée de test (REMPLACER par la vraie)
-  const privateKey = process.env.TOKEN_PRIVATE_KEY || '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef'
+  // Clé privée de test (doit être fournie via les variables d'environnement)
+  const privateKey = process.env.TOKEN_PRIVATE_KEY
+  if (!privateKey) {
+    console.error('❌ La variable d\'environnement TOKEN_PRIVATE_KEY est requise pour ce script.')
+    process.exit(1)
+  }
   
   const wallet = new ethers.Wallet(privateKey)
   console.log('🔑 Signer address:', wallet.address)
