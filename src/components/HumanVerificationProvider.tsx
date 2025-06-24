@@ -77,7 +77,7 @@ export const HumanVerificationProvider: React.FC<HumanVerificationProviderProps>
     } finally {
       setLoading(false);
     }
-  }, [autoShowModal, hasShownModal]);
+  }, [autoShowModal, hasShownModal, delayMs]);
 
   // Rafraîchir le statut
   const refreshStatus = async () => {

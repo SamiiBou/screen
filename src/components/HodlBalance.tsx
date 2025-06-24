@@ -48,18 +48,6 @@ export default function HodlBalance({ className = '' }: HodlBalanceProps) {
     transactionId: transactionId,
   })
 
-  // Charger la balance au montage
-  useEffect(() => {
-    loadBalance()
-  }, [isAuthenticated])
-
-  // Gérer la confirmation de transaction
-  useEffect(() => {
-    if (isConfirmed && claimData) {
-      handleClaimSuccess()
-    }
-  }, [isConfirmed, claimData])
-
   const loadBalance = async () => {
     if (!isAuthenticated) {
       setLoading(false)
@@ -205,6 +193,18 @@ export default function HodlBalance({ className = '' }: HodlBalanceProps) {
       setTransactionId('')
     }
   }
+
+  // Charger la balance au montage
+  useEffect(() => {
+    loadBalance()
+  }, [isAuthenticated, loadBalance])
+
+  // Gérer la confirmation de transaction
+  useEffect(() => {
+    if (isConfirmed && claimData) {
+      handleClaimSuccess()
+    }
+  }, [isConfirmed, claimData, handleClaimSuccess])
 
   if (!isAuthenticated) {
     return null

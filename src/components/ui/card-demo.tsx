@@ -20,10 +20,9 @@ export function CardDemo() {
 }
 
 const Skeleton = () => {
-  const scale = [1, 1.1, 1];
-  const transform = ["translateY(0px)", "translateY(-4px)", "translateY(0px)"];
-
   useEffect(() => {
+    const scale = [1, 1.1, 1];
+    const transform = ["translateY(0px)", "translateY(-4px)", "translateY(0px)"];
     const runAnimations = async () => {
       const circles = [".circle-1", ".circle-2", ".circle-3", ".circle-4", ".circle-5"];
       
@@ -39,7 +38,7 @@ const Skeleton = () => {
     };
     
     runAnimations();
-  }, [scale, transform]);
+  }, []);
   return (
     <div className="p-8 overflow-hidden h-full relative flex items-center justify-center">
       <div className="flex flex-row shrink-0 justify-center items-center gap-2">
