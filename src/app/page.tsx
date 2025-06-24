@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'motion/react'
 import { useRouter } from 'next/navigation'
 import { apiService } from '@/utils/api'
 import { useAuth } from '@/contexts/AuthContext'
-import { useChallenges, Challenge } from '@/contexts/ChallengesContext'
+import { useChallenges, Challenge as ApiChallenge } from '@/contexts/ChallengesContext'
 import { AceternityButton } from '@/components/ui/AceternityButton'
 import AuthGate from '@/components/AuthGate'
 import AddChallengeForm from '@/components/AddChallengeForm'
@@ -15,7 +15,7 @@ import Image from 'next/image'
 import { FaTelegramPlane } from 'react-icons/fa'
 import AddDuelChallengeForm from '@/components/AddDuelChallengeForm'
 
-interface Challenge {
+interface Challenge extends ApiChallenge {
   _id: string
   title: string
   description: string
