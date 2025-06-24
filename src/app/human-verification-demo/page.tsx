@@ -205,7 +205,7 @@ export default function HumanVerificationDemo() {
                     <div>
                       <h4 className="font-medium mb-1">World ID Integration</h4>
                       <p className="text-gray-300 text-sm">
-                        Uses Worldcoin's MiniKit to verify human identity through orb verification.
+                        Uses Worldcoin&apos;s MiniKit to verify human identity through orb verification.
                       </p>
                     </div>
                   </div>

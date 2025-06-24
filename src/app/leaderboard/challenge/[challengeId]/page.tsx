@@ -11,22 +11,6 @@ export default function ChallengeLeaderboardPage() {
   const router = useRouter()
   const challengeId = params?.challengeId as string
 
-  // Early return if no challengeId
-  if (!challengeId) {
-    return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="text-center">
-          <motion.div
-            className="w-8 h-8 border-2 border-black border-t-transparent rounded-full mx-auto mb-4"
-            animate={{ rotate: 360 }}
-            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-          />
-          <p className="text-gray-500">Invalid Challenge</p>
-        </div>
-      </div>
-    )
-  }
-
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([])
   const [challenge, setChallenge] = useState<any>(null)
   const [pagination, setPagination] = useState<any>(null)
