@@ -200,7 +200,7 @@ export default function TestAutoVerificationPage() {
               The provider is configured in the main layout with these parameters:
             </p>
             <div className="bg-gray-900 rounded-lg p-4 font-mono text-sm">
-              <div className="text-gray-400">// src/app/layout.tsx</div>
+              <div className="text-gray-400">{/* src/app/layout.tsx */}</div>
               <div className="text-blue-300">&lt;HumanVerificationProvider</div>
               <div className="text-green-300 ml-4">autoShowModal={`{true}`}</div>
               <div className="text-green-300 ml-4">delayMs={`{2000}`}</div>

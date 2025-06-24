@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { apiService } from '@/utils/api'
 import { useChallenges } from '@/contexts/ChallengesContext'
 import Link from 'next/link'
@@ -12,11 +12,7 @@ export default function TestChallengesPage() {
   const [initLoading, setInitLoading] = useState(false)
   const { setChallengesList } = useChallenges()
 
-  useEffect(() => {
-    loadData()
-  }, [])
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       setLoading(true)
       
@@ -34,7 +30,11 @@ export default function TestChallengesPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [setChallengesList])
+
+  useEffect(() => {
+    loadData()
+  }, [loadData])
 
   const handleInitChallenges = async () => {
     setInitLoading(true)

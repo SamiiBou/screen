@@ -2,6 +2,8 @@
 import React, { createContext, useContext, useState, ReactNode, useCallback, useRef } from 'react'
 import { Challenge, apiService } from '@/utils/api'
 
+export type { Challenge }
+
 interface CachedChallenge {
   data: Challenge
   timestamp: number

@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'motion/react'
 import { useRouter } from 'next/navigation'
 import { apiService } from '@/utils/api'
 import { useAuth } from '@/contexts/AuthContext'
-import { useChallenges } from '@/contexts/ChallengesContext'
+import { useChallenges, Challenge } from '@/contexts/ChallengesContext'
 import { AceternityButton } from '@/components/ui/AceternityButton'
 import AuthGate from '@/components/AuthGate'
 import AddChallengeForm from '@/components/AddChallengeForm'
@@ -53,48 +53,45 @@ function HomePage() {
   const [showMyDuels, setShowMyDuels] = useState(false)
   const [gameMode, setGameMode] = useState<GameMode | null>(null)
   const challengesPerPage = 3
-  const navigatingRef = useRef<Record<string, boolean>>({})
+  const navigatingRef = useRef<{ [key: string]: boolean }>({})
   const { user, isAuthenticated } = useAuth()
-  const { setChallengesList, preloadChallenge } = useChallenges()
+  const { challenges, setChallengesList, preloadChallenge } = useChallenges()
   const router = useRouter()
 
-  useEffect(() => {
-    const loadChallenges = async () => {
-      try {
-        // Charger les challenges actifs et complétés en parallèle
-        const [activeResponse, completedResponse] = await Promise.all([
-          apiService.getActiveChallenges(),
-          apiService.getCompletedChallenges()
-        ])
-        
-        const activeChallengesData = activeResponse.challenges || []
-        const completedChallengesData = completedResponse.challenges || []
-        
-        setActiveChallenges(activeChallengesData)
-        setCompletedChallenges(completedChallengesData)
-        setFilteredChallenges(activeChallengesData)
-        
-        // Mettre à jour le cache des challenges (uniquement les actifs pour la navigation)
-        setChallengesList(activeChallengesData)
-        
-        // PRÉCHARGEMENT RADICAL: Charger les 3 premiers challenges actifs en arrière-plan
-        console.log('🔥 [RADICAL PRELOAD] Starting aggressive preloading...')
-        activeChallengesData.slice(0, 3).forEach((challenge: Challenge, index: number) => {
-          setTimeout(() => {
-            preloadChallenge(challenge._id).catch(console.error)
-          }, index * 100) // Étaler les requêtes
-        })
-      } catch (error) {
-        console.error('Error loading challenges:', error)
-        setActiveChallenges([])
-        setCompletedChallenges([])
-      } finally {
-        setLoading(false)
-      }
-    }
+  const loadChallenges = useCallback(async () => {
+    console.log('🔄 Loading all challenges...')
+    try {
+      const response = await apiService.getChallenges()
+      const allChallenges = response.challenges || []
+      
+      const activeChallengesData = allChallenges.filter((ch: Challenge) => ch.status === 'active')
+      const completedChallengesData = allChallenges.filter((ch: Challenge) => ch.status === 'completed')
 
+      setActiveChallenges(activeChallengesData)
+      setCompletedChallenges(completedChallengesData)
+      
+      // Mettre à jour le cache des challenges (uniquement les actifs pour la navigation)
+      setChallengesList(activeChallengesData)
+      
+      // PRÉCHARGEMENT RADICAL: Charger les 3 premiers challenges actifs en arrière-plan
+      console.log('🔥 [RADICAL PRELOAD] Starting aggressive preloading...')
+      activeChallengesData.slice(0, 3).forEach((challenge: Challenge, index: number) => {
+        setTimeout(() => {
+          preloadChallenge(challenge._id).catch(console.error)
+        }, index * 100) // Étaler les requêtes
+      })
+    } catch (error) {
+      console.error('Error loading challenges:', error)
+      setActiveChallenges([])
+      setCompletedChallenges([])
+    } finally {
+      setLoading(false)
+    }
+  }, [preloadChallenge, setChallengesList])
+
+  useEffect(() => {
     loadChallenges()
-  }, [])
+  }, [loadChallenges])
 
   // Filtrage par prix d'entrée et mode de jeu
   useEffect(() => {

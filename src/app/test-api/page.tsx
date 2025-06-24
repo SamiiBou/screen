@@ -172,7 +172,7 @@ export default function TestApiPage() {
 
         {Object.keys(results).length === 0 && !loading && (
           <div className="text-center text-gray-400 py-12">
-            <p>Click "Run All Tests" to start testing the API endpoints</p>
+            <p>Click &quot;Run All Tests&quot; to start testing the API endpoints</p>
           </div>
         )}
       </div>
