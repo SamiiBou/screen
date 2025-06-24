@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { motion } from 'motion/react'
 import { MiniKit } from '@worldcoin/minikit-js'
 import { useWaitForTransactionReceipt } from '@worldcoin/minikit-react'
@@ -48,7 +48,7 @@ export default function HodlBalance({ className = '' }: HodlBalanceProps) {
     transactionId: transactionId,
   })
 
-  const loadBalance = async () => {
+  const loadBalance = useCallback(async () => {
     if (!isAuthenticated) {
       setLoading(false)
       return
@@ -63,7 +63,7 @@ export default function HodlBalance({ className = '' }: HodlBalanceProps) {
     } finally {
       setLoading(false)
     }
-  }
+  }, [isAuthenticated])
 
   const handleClaim = async () => {
     if (!isAuthenticated || balance <= 0 || claiming) return
@@ -165,7 +165,7 @@ export default function HodlBalance({ className = '' }: HodlBalanceProps) {
     }
   }
 
-  const handleClaimSuccess = async () => {
+  const handleClaimSuccess = useCallback(async () => {
     try {
       // Vérifier que claimData et amount existent
       if (!claimData?.voucher?.amount) {
@@ -192,7 +192,7 @@ export default function HodlBalance({ className = '' }: HodlBalanceProps) {
       setClaimData(null)
       setTransactionId('')
     }
-  }
+  }, [claimData, transactionId, loadBalance])
 
   // Charger la balance au montage
   useEffect(() => {

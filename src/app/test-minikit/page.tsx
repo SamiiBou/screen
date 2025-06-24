@@ -122,7 +122,7 @@ export default function TestMiniKitPage() {
           <div className="space-y-2 text-sm">
             <p>• <strong>To test MiniKit properly:</strong> Open this app inside the World App</p>
             <p>• <strong>In browser:</strong> MiniKit features will be limited but the page should load</p>
-            <p>• <strong>Expected behavior:</strong> "MiniKit Installed" should show ✅ when running in World App</p>
+            <p>• <strong>Expected behavior:</strong> &quot;MiniKit Installed&quot; should show ✅ when running in World App</p>
           </div>
         </div>
 

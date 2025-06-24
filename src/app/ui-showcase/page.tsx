@@ -231,7 +231,7 @@ export default function UIShowcasePage() {
                 <CardHeader>
                   <CardTitle>Get in Touch</CardTitle>
                   <CardDescription>
-                    Send us a message and we'll get back to you.
+                    Send us a message and we&apos;ll get back to you.
                   </CardDescription>
                 </CardHeader>
                 <CardContent>

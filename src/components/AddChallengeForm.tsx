@@ -136,7 +136,7 @@ export default function AddChallengeForm({ onSuccess }: AddChallengeFormProps) {
           <div>
             <Label htmlFor="participationPrice" className="text-sm font-medium text-gray-600">PARTICIPATION PRICE (WLD)</Label>
             <Input id="participationPrice" name="participationPrice" type="number" min={0} step="0.1" value={fields.participationPrice} onChange={handleChange} required className="mt-1" />
-            <p className="text-xs text-gray-500 mt-1">Prix d'entrée en WLD (0 pour un challenge gratuit)</p>
+            <p className="text-xs text-gray-500 mt-1">Prix d&apos;entrée en WLD (0 pour un challenge gratuit)</p>
           </div>
           {error && <div className="text-red-500 text-sm">{error}</div>}
           {success && <div className="text-green-600 text-sm">{success}</div>}
