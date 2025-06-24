@@ -822,7 +822,7 @@ function HomePage() {
                         e.preventDefault()
                         e.stopPropagation()
                         if (challenge.status === 'completed') {
-                          window.open(`/leaderboard/challenge/${challenge._id}`, '_blank')
+                          router.push(`/leaderboard/challenge/${challenge._id}`)
                         } else {
                           handleChallengeClick(challenge._id, e, e.currentTarget)
                         }
@@ -831,7 +831,7 @@ function HomePage() {
                         e.preventDefault()
                         e.stopPropagation()
                         if (challenge.status === 'completed') {
-                          window.open(`/leaderboard/challenge/${challenge._id}`, '_blank')
+                          router.push(`/leaderboard/challenge/${challenge._id}`)
                         } else {
                           handleChallengeClick(challenge._id, e, e.currentTarget)
                         }

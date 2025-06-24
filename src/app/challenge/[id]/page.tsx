@@ -705,9 +705,23 @@ function ChallengePage() {
           >
             <div className="text-center">
               <h3 className="text-lg font-semibold text-black mb-2">🏆 Leaderboard</h3>
-              <p className="text-gray-500 text-sm">
-                The leaderboard will be revealed at the end of the challenge
-              </p>
+              {displayChallenge?.status === 'completed' ? (
+                <div className="space-y-3">
+                  <p className="text-gray-500 text-sm">
+                    Challenge completed! View the final results.
+                  </p>
+                  <button
+                    onClick={() => router.push(`/leaderboard/challenge/${challengeId}`)}
+                    className="bg-black text-white px-6 py-2 rounded-lg text-sm font-medium hover:bg-gray-900 transition-all duration-200"
+                  >
+                    View Leaderboard
+                  </button>
+                </div>
+              ) : (
+                <p className="text-gray-500 text-sm">
+                  The leaderboard will be revealed when the challenge is completed and all participants have finished
+                </p>
+              )}
             </div>
           </motion.div>
 

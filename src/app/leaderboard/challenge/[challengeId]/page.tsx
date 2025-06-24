@@ -194,7 +194,19 @@ export default function ChallengeLeaderboardPage() {
 
             {/* Leaderboard Content */}
             <div className="px-8 py-6">
-              {leaderboard.length === 0 ? (
+              {challenge?.status !== 'completed' ? (
+                <div className="text-center py-12">
+                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <span className="text-2xl text-gray-400">🏆</span>
+                  </div>
+                  <h3 className="text-xl font-light text-black mb-3">
+                    Challenge in Progress
+                  </h3>
+                  <p className="text-gray-500 text-sm leading-relaxed max-w-md mx-auto">
+                    The leaderboard will be revealed when the challenge is completed and all participants have finished.
+                  </p>
+                </div>
+              ) : leaderboard.length === 0 ? (
                 <div className="text-center py-12">
                   <p className="text-gray-400 text-sm">No participants yet</p>
                 </div>
