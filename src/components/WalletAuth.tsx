@@ -4,6 +4,7 @@ import React, { useState } from 'react'
 import { MiniKit, verifySiweMessage } from '@worldcoin/minikit-js'
 import { apiService } from '@/utils/api'
 import { useAuth } from '@/contexts/AuthContext'
+import Image from 'next/image'
 
 interface WalletAuthProps {
   onAuthSuccess?: (userData: any) => void
@@ -301,7 +302,13 @@ const WalletAuth: React.FC<WalletAuthProps> = ({ onAuthSuccess, onAuthError, onC
         <div className="user-info">
           <div className="wallet-avatar">
             {(user as any).avatar ? (
-              <img src={(user as any).avatar} alt="Avatar" style={{ width: '100%', height: '100%', borderRadius: '50%' }} />
+              <Image 
+                src={(user as any).avatar} 
+                alt="Avatar" 
+                width={40}
+                height={40}
+                style={{ borderRadius: '50%' }} 
+              />
             ) : (
               (user as any).username ? (user as any).username[0].toUpperCase() : '👤'
             )}

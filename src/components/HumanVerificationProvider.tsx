@@ -1,6 +1,6 @@
 'use client'
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { apiService } from '@/utils/api';
 import HumanVerificationModal from './HumanVerificationModal';
 
@@ -43,7 +43,7 @@ export const HumanVerificationProvider: React.FC<HumanVerificationProviderProps>
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   // Vérifier le statut de vérification
-  const checkVerificationStatus = async () => {
+  const checkVerificationStatus = useCallback(async () => {
     try {
       // Vérifier d'abord si l'utilisateur est connecté
       if (!apiService.isAuthenticated()) {
@@ -77,7 +77,7 @@ export const HumanVerificationProvider: React.FC<HumanVerificationProviderProps>
     } finally {
       setLoading(false);
     }
-  };
+  }, [autoShowModal, hasShownModal]);
 
   // Rafraîchir le statut
   const refreshStatus = async () => {
@@ -127,7 +127,7 @@ export const HumanVerificationProvider: React.FC<HumanVerificationProviderProps>
     }, 2000); // Vérifier toutes les 2 secondes
 
     return () => clearInterval(interval);
-  }, [isAuthenticated]);
+  }, [isAuthenticated, checkVerificationStatus]);
 
   // Réinitialiser hasShownModal si l'utilisateur devient non-vérifié
   useEffect(() => {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { apiService } from '@/utils/api';
 import HumanVerificationModal from './HumanVerificationModal';
 import { useHumanVerification } from './HumanVerificationProvider';
@@ -22,27 +22,15 @@ const HumanVerificationButton: React.FC<HumanVerificationButtonProps> = ({
   const [localVerificationData, setLocalVerificationData] = useState<any>(null);
   const [localLoading, setLocalLoading] = useState(true);
 
-  // Essayer d'utiliser le contexte global
-  let contextValue = null;
-  try {
-    contextValue = useHumanVerification();
-  } catch (error) {
-    // Pas de provider, utiliser les états locaux
-  }
+  // Toujours appeler le hook
+  const contextValue = useHumanVerification();
 
   // Utiliser le contexte s'il est disponible, sinon utiliser les états locaux
   const isVerified = contextValue?.isVerified ?? localIsVerified;
   const verificationData = contextValue?.verificationData ?? localVerificationData;
   const loading = contextValue ? false : localLoading; // Le provider gère son propre loading
 
-  useEffect(() => {
-    // Si pas de contexte, charger le statut localement
-    if (!contextValue) {
-      checkVerificationStatus();
-    }
-  }, [contextValue]);
-
-  const checkVerificationStatus = async () => {
+  const checkVerificationStatus = useCallback(async () => {
     if (contextValue) return; // Le provider s'en occupe
     
     try {
@@ -56,7 +44,14 @@ const HumanVerificationButton: React.FC<HumanVerificationButtonProps> = ({
     } finally {
       setLocalLoading(false);
     }
-  };
+  }, [contextValue]);
+
+  useEffect(() => {
+    // Si pas de contexte, charger le statut localement
+    if (!contextValue) {
+      checkVerificationStatus();
+    }
+  }, [contextValue, checkVerificationStatus]);
 
   const handleOpenModal = () => {
     if (contextValue) {
